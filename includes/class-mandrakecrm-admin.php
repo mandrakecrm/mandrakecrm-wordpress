@@ -617,9 +617,6 @@ class MandrakeCRM_Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$abandoned_cart       = isset( $_POST['mandrakecrm_abandoned_cart'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['mandrakecrm_abandoned_cart'] ) ) ? '1' : '0';
 
-		// Logging for debug
-		error_log( 'MandrakeCRM: Saving settings - transactional_emails=' . $transactional_emails . ', widget=' . $widget_option . ', abandoned_cart=' . $abandoned_cart );
-
 		// Save options only (token stays as-is from verification)
 		update_option( 'mandrakecrm_transactional_emails', $transactional_emails );
 		update_option( 'mandrakecrm_widget_option', $widget_option );
@@ -630,10 +627,7 @@ class MandrakeCRM_Admin {
 		$verify_widget        = get_option( 'mandrakecrm_widget_option' );
 		$verify_abandoned_cart = get_option( 'mandrakecrm_abandoned_cart' );
 
-		error_log( 'MandrakeCRM: Verified - transactional_emails=' . $verify_transactional . ', widget=' . $verify_widget . ', abandoned_cart=' . $verify_abandoned_cart );
-
 		if ( $verify_transactional !== $transactional_emails || $verify_widget !== $widget_option || $verify_abandoned_cart !== $abandoned_cart ) {
-			error_log( 'MandrakeCRM: ERROR - Options not saved correctly!' );
 			wp_send_json_error( array( 'message' => __('Failed to save settings', 'mandrakecrm' ) ) );
 			return;
 		}
@@ -670,9 +664,6 @@ class MandrakeCRM_Admin {
 		// Remove tokens only - preserve feature options for reconnection
 		delete_option( 'mandrakecrm_token' );
 		delete_option( 'mandrakecrm_widget_token' );
-
-		// Logging
-		error_log( 'MandrakeCRM: Integration disconnected by user' );
 
 		wp_send_json_success(
 			array( 'message' => __('Integration disconnected successfully', 'mandrakecrm' ) )

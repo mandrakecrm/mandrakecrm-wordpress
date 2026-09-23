@@ -1059,10 +1059,6 @@ class MandrakeCRM_Abandoned_Cart {
 				'timeout' => 15,
 			)
 		);
-
-		if ( is_wp_error( $response ) ) {
-			error_log( 'MandrakeCRM Abandoned Cart webhook error: ' . $response->get_error_message() );
-		}
 	}
 
 	/**

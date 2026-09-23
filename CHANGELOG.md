@@ -3,6 +3,12 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.19
+* Removed debug logging that was triggering on every request and saturating
+  server logs on customer sites. Improves performance and reduces disk I/O.
+* Security: removed debug entries that were writing customer emails and
+  password-reset URLs to PHP error logs.
+
 ## 3.18
 * Marketing opt-in checkbox now inherits the store's primary brand color
   (resolved from common theme CSS variables: Woodmart, Astra, generic

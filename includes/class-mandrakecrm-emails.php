@@ -82,8 +82,6 @@ class MandrakeCRM_Emails {
 
 		// Generic hook for ANY status change (catches dashboard changes)
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'handle_status_change' ), 20, 3 );
-
-		error_log( 'MandrakeCRM: Email hooks initialized' );
 	}
 
 	/**
@@ -103,8 +101,6 @@ class MandrakeCRM_Emails {
 		if ( '1' !== $email_option ) {
 			return;
 		}
-
-		error_log( 'MandrakeCRM: Disabling WooCommerce default email triggers' );
 
 		// Disable admin "New Order" notifications (multiple transitions)
 		if ( isset( $email_class->emails['WC_Email_New_Order'] ) ) {
@@ -150,15 +146,12 @@ class MandrakeCRM_Emails {
 		// Disable customer "Reset Password" notifications
 		if ( isset( $email_class->emails['WC_Email_Customer_Reset_Password'] ) ) {
 			remove_action( 'woocommerce_reset_password_notification', array( $email_class->emails['WC_Email_Customer_Reset_Password'], 'trigger' ) );
-			error_log( 'MandrakeCRM: Disabled WooCommerce password reset email' );
 		}
 
 		// Disable stock notifications
 		remove_action( 'woocommerce_low_stock_notification', array( $email_class, 'low_stock' ) );
 		remove_action( 'woocommerce_no_stock_notification', array( $email_class, 'no_stock' ) );
 		remove_action( 'woocommerce_product_on_backorder_notification', array( $email_class, 'backorder' ) );
-
-		error_log( 'MandrakeCRM: WooCommerce default emails disabled successfully' );
 	}
 
 	/**
@@ -181,7 +174,6 @@ class MandrakeCRM_Emails {
 
 		if ( ! $enabled || empty( $token ) ) {
 			// Feature disabled or no token - let WordPress send default email
-			error_log( 'MandrakeCRM: Password reset feature disabled or no token available' );
 			return $message;
 		}
 
@@ -199,8 +191,6 @@ class MandrakeCRM_Emails {
 			wc_get_endpoint_url( 'lost-password', '', wc_get_page_permalink( 'myaccount' ) )
 		);
 
-		error_log( 'MandrakeCRM: Sending password reset email to ' . $user_data->user_email );
-
 		$sent = MandrakeCRM_API_Client::send_email(
 			'password_reset',
 			$user_data->user_email,
@@ -212,9 +202,7 @@ class MandrakeCRM_Emails {
 			// API success: Block WordPress default email to prevent duplicates
 			add_filter( 'wp_mail', array( __CLASS__, 'block_password_email' ), 1 );
 		} else {
-			// API failure: Increment failure counter and log
-			error_log( 'MandrakeCRM: Password reset email FAILED to send via API' );
-
+			// API failure: Increment failure counter
 			$failure_count = get_transient( 'mandrakecrm_email_failures' );
 			$failure_count = $failure_count ? (int) $failure_count + 1 : 1;
 			set_transient( 'mandrakecrm_email_failures', $failure_count, WEEK_IN_SECONDS );
@@ -267,14 +255,12 @@ class MandrakeCRM_Emails {
 		$token   = get_option( 'mandrakecrm_token', '' );
 
 		if ( ! $enabled || empty( $token ) ) {
-			error_log( 'MandrakeCRM: Password reset email disabled or no token configured' );
 			return; // Let WooCommerce send default email
 		}
 
 		// Get user by login
 		$user = get_user_by( 'login', $user_login );
 		if ( ! $user ) {
-			error_log( 'MandrakeCRM: User not found for password reset: ' . $user_login );
 			return;
 		}
 
@@ -286,9 +272,6 @@ class MandrakeCRM_Emails {
 			),
 			wc_get_endpoint_url( 'lost-password', '', wc_get_page_permalink( 'myaccount' ) )
 		);
-
-		error_log( 'MandrakeCRM: Sending WooCommerce password reset email to ' . $user->user_email );
-		error_log( 'MandrakeCRM: Reset URL: ' . $reset_url );
 
 		// Send via MandrakeCRM API
 		MandrakeCRM_API_Client::send_email(
@@ -399,8 +382,6 @@ class MandrakeCRM_Emails {
 			return;
 		}
 
-		error_log( 'MandrakeCRM: Sending new account email for customer ID: ' . $customer_id );
-
 		// Build additional data array with user info (mirroring WC_Email_Customer_New_Account)
 		$additional_data = array(
 			'user_id'    => $customer_id,
@@ -413,8 +394,6 @@ class MandrakeCRM_Emails {
 		if ( ! empty( $password_generated ) ) {
 			$additional_data['user_pass'] = $password_generated;
 			$additional_data['password']  = $password_generated; // Alias for compatibility
-
-			error_log( 'MandrakeCRM: Password generated for new account, length: ' . strlen( $password_generated ) );
 		}
 
 		// Generate set_password_url using WordPress Core get_password_reset_key()
@@ -431,10 +410,6 @@ class MandrakeCRM_Emails {
 			);
 
 			$additional_data['set_password_url'] = $set_password_url;
-
-			error_log( 'MandrakeCRM: Generated set_password_url: ' . $set_password_url );
-		} else {
-			error_log( 'MandrakeCRM: Failed to generate password reset key: ' . $key->get_error_message() );
 		}
 
 		MandrakeCRM_API_Client::send_email(
@@ -474,11 +449,8 @@ class MandrakeCRM_Emails {
 
 		// Don't send if no email
 		if ( empty( $customer_email ) ) {
-			error_log( 'MandrakeCRM: Customer note email skipped - no email address' );
 			return;
 		}
-
-		error_log( 'MandrakeCRM: Sending customer note email to ' . $customer_email );
 
 		// Send via API
 		MandrakeCRM_API_Client::send_email(
@@ -502,8 +474,6 @@ class MandrakeCRM_Emails {
 	 * @param string $new_status New status (without wc- prefix).
 	 */
 	public static function handle_status_change( $order_id, $old_status, $new_status ) {
-		error_log( 'MandrakeCRM: Generic status change - Order #' . $order_id . ' from ' . $old_status . ' to ' . $new_status );
-
 		// Don't process if status didn't actually change
 		if ( $old_status === $new_status ) {
 			return;
@@ -537,13 +507,11 @@ class MandrakeCRM_Emails {
 			case 'pending':
 				// No email for pending status by default
 				// (Could be customized if needed)
-				error_log( 'MandrakeCRM: Order #' . $order_id . ' changed to pending - no email sent' );
 				break;
 			case 'checkout-draft':
 				// No email for draft status
 				break;
 			default:
-				error_log( 'MandrakeCRM: Unknown status ' . $new_status . ' for order #' . $order_id );
 				break;
 		}
 	}
@@ -590,7 +558,6 @@ class MandrakeCRM_Emails {
 		$sent = get_transient( $transient_key );
 
 		if ( $sent ) {
-			error_log( 'MandrakeCRM: Email for order #' . $order_id . ' status ' . $status . ' already sent (debounced)' );
 			return true;
 		}
 
@@ -613,18 +580,14 @@ class MandrakeCRM_Emails {
 		// Verify token BEFORE processing
 		$token = get_option( 'mandrakecrm_token', '' );
 		if ( empty( $token ) ) {
-			error_log( 'MandrakeCRM: No token - email not sent for order #' . $order_id );
 			return;
 		}
 
 		// Get order object
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			error_log( 'MandrakeCRM: Order not found - Order ID: ' . $order_id );
 			return;
 		}
-
-		error_log( 'MandrakeCRM: Preparing to send ' . $email_type . ' email for order #' . $order_id );
 
 		// Gather order items with complete product data
 		$items = array();
@@ -767,9 +730,6 @@ class MandrakeCRM_Emails {
 			'shipping_address'   => $shipping_address,
 		);
 
-		// Log for debugging
-		error_log( 'MandrakeCRM: Email payload ready - Order #' . $order_id . ' (' . $email_type . ')' );
-
 		// Send to webhook.site for testing (OPTIONAL - remove in production)
 		$webhook_url = apply_filters( 'mandrakecrm_webhook_debug_url', '' );
 		if ( ! empty( $webhook_url ) ) {
@@ -782,15 +742,10 @@ class MandrakeCRM_Emails {
 					'timeout' => 5,
 				)
 			);
-			error_log( 'MandrakeCRM: Debug webhook called' );
 		}
 
 	// Extract downloadable products from order
 	$downloads = self::get_order_downloads( $order );
-
-	if ( ! empty( $downloads ) ) {
-		error_log( 'MandrakeCRM: Order #' . $order_id . ' has ' . count( $downloads ) . ' downloadable products' );
-	}
 
 	// Build email data
 	$email_data = array(
@@ -829,7 +784,5 @@ class MandrakeCRM_Emails {
 		trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 		$email_data
 	);
-
-		error_log( 'MandrakeCRM: Email sent to API for order #' . $order_id );
 	}
 }

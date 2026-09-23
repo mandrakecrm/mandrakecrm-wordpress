@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.18
+Stable tag: 3.19
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -180,6 +180,12 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.19 =
+* Removed debug logging that was triggering on every request and saturating
+  server logs on customer sites. Improves performance and reduces disk I/O.
+* Security: removed debug entries that were writing customer emails and
+  password-reset URLs to PHP error logs.
 
 = 3.18 =
 * Marketing opt-in checkbox now inherits the store's primary brand color

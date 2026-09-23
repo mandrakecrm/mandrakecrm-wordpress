@@ -140,7 +140,6 @@ class MandrakeCRM_API_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'MandrakeCRM: sync_status - Network error: ' . $response->get_error_message() );
 			return false;
 		}
 
@@ -149,14 +148,11 @@ class MandrakeCRM_API_Client {
 
 		// Validate HTTP status code
 		if ( 200 !== $code ) {
-			error_log( 'MandrakeCRM: sync_status - HTTP error: ' . $code );
 			return false;
 		}
 
 		// CRITICAL: Validate response.success in body (not just HTTP 200)
 		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
-			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : 'Unknown error from server';
-			error_log( 'MandrakeCRM: sync_status - Response error: ' . $error_msg );
 			return false;
 		}
 
@@ -194,7 +190,6 @@ class MandrakeCRM_API_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'MandrakeCRM: notify_deactivation - Network error: ' . $response->get_error_message() );
 			return false;
 		}
 
@@ -203,14 +198,11 @@ class MandrakeCRM_API_Client {
 
 		// Validate HTTP status code
 		if ( 200 !== $code ) {
-			error_log( 'MandrakeCRM: notify_deactivation - HTTP error: ' . $code );
 			return false;
 		}
 
 		// CRITICAL: Validate response.success in body
 		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
-			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : 'Unknown error';
-			error_log( 'MandrakeCRM: notify_deactivation - Response error: ' . $error_msg );
 			return false;
 		}
 
@@ -248,7 +240,6 @@ class MandrakeCRM_API_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'MandrakeCRM: notify_disconnection - Network error: ' . $response->get_error_message() );
 			return false;
 		}
 
@@ -257,14 +248,11 @@ class MandrakeCRM_API_Client {
 
 		// Validate HTTP status code
 		if ( 200 !== $code ) {
-			error_log( 'MandrakeCRM: notify_disconnection - HTTP error: ' . $code );
 			return false;
 		}
 
 		// CRITICAL: Validate response.success in body
 		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
-			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : 'Unknown error';
-			error_log( 'MandrakeCRM: notify_disconnection - Response error: ' . $error_msg );
 			return false;
 		}
 
@@ -285,7 +273,6 @@ class MandrakeCRM_API_Client {
 		$token = self::get_token();
 
 		if ( empty( $token ) ) {
-			error_log( 'MandrakeCRM: send_email - No token configured' );
 			return false;
 		}
 
@@ -298,9 +285,6 @@ class MandrakeCRM_API_Client {
 			),
 			$data
 		);
-
-		error_log( 'MandrakeCRM: send_email - Type: ' . $email_type . ', Recipient: ' . $recipient );
-		error_log( 'MandrakeCRM: send_email - Payload: ' . wp_json_encode( $payload ) );
 
 		$response = wp_remote_post(
 			MANDRAKECRM_API_BASE . '/store-send-transactional',
@@ -316,24 +300,19 @@ class MandrakeCRM_API_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'MandrakeCRM: send_email - Error: ' . $response->get_error_message() );
 			return false;
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-		error_log( 'MandrakeCRM: send_email - Response code: ' . $code . ', Body: ' . wp_json_encode( $body ) );
 
 		// Validate HTTP status code
 		if ( 200 !== $code ) {
-			error_log( 'MandrakeCRM: send_email - HTTP error: ' . $code );
 			return false;
 		}
 
 		// CRITICAL: Validate response.success in body (not just HTTP 200)
 		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
-			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : 'Unknown error from server';
-			error_log( 'MandrakeCRM: send_email - Response error: ' . $error_msg );
 			return false;
 		}
 
