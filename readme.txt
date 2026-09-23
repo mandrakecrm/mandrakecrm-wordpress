@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.20
+Stable tag: 3.21
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -181,6 +181,16 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.21 =
+* Fix: orders placed through the block checkout recorded no campaign attribution
+  at all. `woocommerce_checkout_create_order` only exists in the classic checkout;
+  the Store API builds the order separately and never fires it, so every block
+  checkout store was losing 100% of its UTM data — with or without a page cache.
+  Attribution is now also saved from
+  `woocommerce_store_api_checkout_update_order_meta`.
+* Attribution is written once per order: if an order already carries UTM data it
+  is left untouched, so the classic and block entry points cannot stamp it twice.
+
 = 3.20 =
 * Fix: campaign attribution was lost on stores with a full-page cache. UTM
   parameters were only read on the server, and a page cache serves a stored
@@ -258,6 +268,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.21 =
+Required if your store uses the block checkout: those orders were recording no
+campaign attribution at all. No configuration changes needed.
 
 = 3.20 =
 Recommended for every store behind a page cache: campaign attribution was being

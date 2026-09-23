@@ -93,6 +93,15 @@ class MandrakeCRM_UTM {
 		add_action( 'init', array( __CLASS__, 'capture_utm_params' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_capture_script' ), 1 );
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'save_utm_to_order' ), 10, 2 );
+
+		// Block checkout. `woocommerce_checkout_create_order` lives only in
+		// class-wc-checkout.php, so it never fires for orders placed through the
+		// Store API: those are built with `new \WC_Order()` in
+		// StoreApi/Utilities/OrderController.php and stamped `created_via=store-api`.
+		// Without this hook a store on the block checkout records no attribution at
+		// all. This action is WooCommerce's documented counterpart for adding meta.
+		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( __CLASS__, 'save_utm_to_block_order' ), 10, 1 );
+
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'display_utm_in_admin' ) );
 	}
 
@@ -257,13 +266,42 @@ class MandrakeCRM_UTM {
 	}
 
 	/**
+	 * Save UTM data to an order placed through the block checkout.
+	 *
+	 * The Store API never fires `woocommerce_checkout_create_order`, so without this
+	 * bridge a store using the block checkout records no attribution at all. The
+	 * order may already exist in the database at this point, so its meta is flushed
+	 * explicitly.
+	 *
+	 * @since 3.21.0
+	 * @param WC_Order $order Order object.
+	 */
+	public static function save_utm_to_block_order( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
+		self::save_utm_to_order( $order, array() );
+
+		if ( $order->get_id() ) {
+			$order->save_meta_data();
+		}
+	}
+
+	/**
 	 * Save UTM data to order.
 	 *
 	 * @since 2.0.0
+	 * @since 3.21.0 Bails when the order already carries attribution, so that the
+	 *               classic and Store API entry points cannot stamp it twice.
 	 * @param WC_Order $order Order object.
 	 * @param array    $data  Posted data.
 	 */
 	public static function save_utm_to_order( $order, $data ) {
+		if ( $order->get_meta( '_mandrakecrm_utm_data' ) ) {
+			return;
+		}
+
 		$utm_data = self::get_utm_from_cookie();
 
 		if ( empty( $utm_data ) ) {
