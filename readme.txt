@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.16
+Stable tag: 3.17
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -180,6 +180,18 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.17 =
+* New: Cashback redemption coupons are auto-applied to the cart from a deep-link.
+* When the customer clicks "Aplicar agora" on the redemption widget, the URL
+  carries `?apply_coupon=CB-XXXXXXXX`. The plugin detects it, calls
+  `WC()->cart->apply_coupon()` and redirects to the cart page so the discount
+  shows up immediately — no manual paste needed.
+* Strict whitelist: only codes matching `^CB-[A-Z0-9]{8}$` are applied; any
+  other coupon code in the URL is ignored. Idempotent: re-loading the URL
+  does not duplicate the coupon.
+* WC native security still enforced (email_restrictions, usage_limit,
+  expiration, etc.). The plugin only triggers the apply — WC validates.
 
 = 3.16 =
 * Widget script now loads on checkout and cart pages to support Order Bump and other checkout widgets

@@ -3,6 +3,18 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.17
+* New: Cashback redemption coupons are auto-applied to the cart from a deep-link.
+* When the customer clicks "Aplicar agora" on the redemption widget, the URL
+  carries `?apply_coupon=CB-XXXXXXXX`. The plugin detects it, calls
+  `WC()->cart->apply_coupon()` and redirects to the cart page so the discount
+  shows up immediately — no manual paste needed.
+* Strict whitelist: only codes matching `^CB-[A-Z0-9]{8}$` are applied; any
+  other coupon code in the URL is ignored. Idempotent: re-loading the URL
+  does not duplicate the coupon.
+* WC native security still enforced (email_restrictions, usage_limit,
+  expiration, etc.). The plugin only triggers the apply — WC validates.
+
 ## 3.16
 * Widget script now loads on checkout and cart pages to support Order Bump and other checkout widgets
 * No behavior change for product/home/shop pages — existing widgets continue working as before
