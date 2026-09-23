@@ -109,6 +109,7 @@ class MandrakeCRM_Abandoned_Cart {
 		add_action( 'woocommerce_add_to_cart', array( __CLASS__, 'on_cart_updated' ) );
 		add_action( 'woocommerce_cart_item_removed', array( __CLASS__, 'on_cart_updated' ) );
 		add_action( 'woocommerce_cart_item_restored', array( __CLASS__, 'on_cart_updated' ) );
+		add_action( 'woocommerce_after_cart_item_quantity_update', array( __CLASS__, 'remove_phantom_cart_item' ), 1, 4 );
 		add_action( 'woocommerce_after_cart_item_quantity_update', array( __CLASS__, 'on_cart_updated' ) );
 		add_action( 'woocommerce_cart_updated', array( __CLASS__, 'on_cart_updated' ) );
 
@@ -571,6 +572,29 @@ class MandrakeCRM_Abandoned_Cart {
 	}
 
 	/**
+	 * Remove the phantom item created by WC_Cart::set_quantity() with a stale cart item key.
+	 *
+	 * set_quantity() does not validate the key: an unknown key creates an entry with only
+	 * 'quantity' (no 'data'), which makes WC_Cart_Totals fatal. Themes such as WoodMart pass
+	 * the key from a stale mini-cart, so we drop that entry before totals are calculated.
+	 *
+	 * @since 3.22
+	 * @param string  $cart_item_key Cart item key.
+	 * @param int     $quantity      New quantity.
+	 * @param int     $old_quantity  Old quantity.
+	 * @param WC_Cart $cart          Cart object.
+	 */
+	public static function remove_phantom_cart_item( $cart_item_key, $quantity, $old_quantity, $cart ) {
+		if ( ! $cart instanceof WC_Cart || ! isset( $cart->cart_contents[ $cart_item_key ] ) ) {
+			return;
+		}
+
+		if ( ! isset( $cart->cart_contents[ $cart_item_key ]['data'] ) ) {
+			unset( $cart->cart_contents[ $cart_item_key ] );
+		}
+	}
+
+	/**
 	 * Handler for cart update events.
 	 *
 	 * @since 2.1.0
@@ -613,6 +637,9 @@ class MandrakeCRM_Abandoned_Cart {
 		$cart_contents = array();
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
 			$product = $cart_item['data'];
+			if ( ! $product instanceof WC_Product ) {
+				continue;
+			}
 			$cart_contents[] = array(
 				'product_id'   => $cart_item['product_id'],
 				'name'         => $product->get_name(),
@@ -623,6 +650,11 @@ class MandrakeCRM_Abandoned_Cart {
 				'variation_id' => $cart_item['variation_id'] ?? 0,
 				'variation'    => $cart_item['variation'] ?? array(),
 			);
+		}
+
+		// Nothing valid to track (e.g. only a phantom item from a stale cart item key).
+		if ( empty( $cart_contents ) ) {
+			return;
 		}
 
 		$now = current_time( 'mysql' );
@@ -669,6 +701,9 @@ class MandrakeCRM_Abandoned_Cart {
 				$cart_contents_for_webhook = array();
 				foreach ( WC()->cart->get_cart() as $cart_item ) {
 					$product = $cart_item['data'];
+					if ( ! $product instanceof WC_Product ) {
+						continue;
+					}
 					$cart_contents_for_webhook[] = array(
 						'product_id'   => $cart_item['product_id'],
 						'name'         => $product->get_name(),

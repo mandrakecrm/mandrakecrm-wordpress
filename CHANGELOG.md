@@ -3,6 +3,14 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.22
+* Fix: changing a cart quantity could fail with a fatal error when the theme sent
+  the key of an item that was no longer in the cart (e.g. WoodMart's mini-cart from
+  a stale tab). `WC_Cart::set_quantity()` does not validate the key and adds an
+  entry without a product; that entry is now dropped before totals are calculated,
+  and abandoned-cart tracking skips any cart item without a valid product.
+* Tested up to WordPress 7.1.
+
 ## 3.21
 * Fix: orders placed through the block checkout recorded no campaign attribution
   at all. `woocommerce_checkout_create_order` only exists in the classic checkout;

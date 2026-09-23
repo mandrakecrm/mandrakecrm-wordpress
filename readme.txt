@@ -2,10 +2,10 @@
 Contributors: mandrakecrm
 Tags: woocommerce, crm, email-marketing, abandoned-cart, marketing-automation
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.21
+Stable tag: 3.22
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -181,6 +181,14 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.22 =
+* Fix: changing a cart quantity could fail with a fatal error when the theme sent
+  the key of an item that was no longer in the cart (e.g. WoodMart's mini-cart from
+  a stale tab). `WC_Cart::set_quantity()` does not validate the key and adds an
+  entry without a product; that entry is now dropped before totals are calculated,
+  and abandoned-cart tracking skips any cart item without a valid product.
+* Tested up to WordPress 7.1.
+
 = 3.21 =
 * Fix: orders placed through the block checkout recorded no campaign attribution
   at all. `woocommerce_checkout_create_order` only exists in the classic checkout;
@@ -268,6 +276,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.22 =
+Recommended: fixes a fatal error when changing a cart quantity from a stale
+mini-cart. No configuration changes needed.
 
 = 3.21 =
 Required if your store uses the block checkout: those orders were recording no
