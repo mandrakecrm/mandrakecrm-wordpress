@@ -2,7 +2,7 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM | Marketing Automation and AI 3.11\n"
+"Project-Id-Version: MandrakeCRM | Marketing Automation and AI 3.12\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: MandrakeCRM Team\n"
 "Language-Team: Português Brasil\n"
@@ -393,3 +393,7 @@ msgstr "Detectamos %d tentativas falhadas de envio de emails transacionais via A
 #, php-format
 msgid "Please verify your internet connection and MandrakeCRM token. If the issue persists, contact support at %s"
 msgstr "Por favor verifique sua conexão com a internet e o token do MandrakeCRM. Se o problema persistir, entre em contato com o suporte em %s"
+
+#: mandrakecrm.php:101
+msgid "Install WooCommerce"
+msgstr "Instalar WooCommerce"

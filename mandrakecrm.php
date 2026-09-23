@@ -3,10 +3,11 @@
  * Plugin Name: MandrakeCRM – E-commerce CRM & AI Marketing Automation
  * Plugin URI: https://www.mandrakecrm.com
  * Description: Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial.
- * Version: 3.11
+ * Version: 3.12
  * Requires at least: 6.0
  * Tested up to: 6.9
  * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  * Author: MandrakeCRM
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -30,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin constants.
  */
-define( 'MANDRAKECRM_VERSION', '3.11' );
+define( 'MANDRAKECRM_VERSION', '3.12' );
 define( 'MANDRAKECRM_PLUGIN_FILE', __FILE__ );
 define( 'MANDRAKECRM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MANDRAKECRM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -75,20 +76,30 @@ function mandrakecrm_check_woocommerce() {
 /**
  * Display WooCommerce missing notice.
  *
+ * Modern dismissible notice following WordPress guidelines.
+ *
  * @since 2.0.0
+ * @since 3.12 Updated to use notice-warning and is-dismissible per WordPress best practices.
  */
 function mandrakecrm_woocommerce_missing_notice() {
+	$install_url = wp_nonce_url(
+		self_admin_url( 'update.php?action=install-plugin&plugin=woocommerce' ),
+		'install-plugin_woocommerce'
+	);
 	?>
-	<div class="notice notice-error">
+	<div class="notice notice-warning is-dismissible">
 		<p>
 			<?php
 			printf(
-				/* translators: %s: WooCommerce plugin name */
+				/* translators: %1$s: MandrakeCRM, %2$s: WooCommerce, %3$s: Install link */
 				esc_html__( '%1$s requires %2$s to be installed and active.', 'mandrakecrm' ),
 				'<strong>MandrakeCRM</strong>',
 				'<strong>WooCommerce</strong>'
 			);
 			?>
+			<a href="<?php echo esc_url( $install_url ); ?>" class="button button-primary" style="margin-left: 10px;">
+				<?php esc_html_e( 'Install WooCommerce', 'mandrakecrm' ); ?>
+			</a>
 		</p>
 	</div>
 	<?php
