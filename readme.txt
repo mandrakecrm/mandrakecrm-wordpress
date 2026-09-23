@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.19
+Stable tag: 3.20
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -181,6 +181,21 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.20 =
+* Fix: campaign attribution was lost on stores with a full-page cache. UTM
+  parameters were only read on the server, and a page cache serves a stored
+  copy without ever starting PHP, so a visitor landing on a cached page with
+  `?utm_source=...` produced no tracking cookie and their order had no
+  attribution. Measured on a production store: only 70% of campaign orders
+  were attributed.
+* UTM parameters are now also captured in the browser, which runs on every page
+  view regardless of the cache. Same cookie, same 30-day window, same order
+  meta — no change to stored data or to existing reports.
+* Server-side capture is kept as well, so visitors with JavaScript disabled are
+  still tracked and page-cache behavior stays exactly as before.
+* Hardening: values read back from the tracking cookie are now restricted to
+  known UTM keys and capped in length.
+
 = 3.19 =
 * Removed debug logging that was triggering on every request and saturating
   server logs on customer sites. Improves performance and reduces disk I/O.
@@ -243,6 +258,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.20 =
+Recommended for every store behind a page cache: campaign attribution was being
+lost on cached landing pages. No configuration changes needed.
 
 = 3.16 =
 Enables widget loading on checkout/cart pages. Required for Order Bump and other checkout-context widgets.

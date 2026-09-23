@@ -3,6 +3,21 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.20
+* Fix: campaign attribution was lost on stores with a full-page cache. UTM
+  parameters were only read on the server, and a page cache serves a stored
+  copy without ever starting PHP, so a visitor landing on a cached page with
+  `?utm_source=...` produced no tracking cookie and their order had no
+  attribution. Measured on a production store: only 70% of campaign orders
+  were attributed.
+* UTM parameters are now also captured in the browser, which runs on every page
+  view regardless of the cache. Same cookie, same 30-day window, same order
+  meta — no change to stored data or to existing reports.
+* Server-side capture is kept as well, so visitors with JavaScript disabled are
+  still tracked and page-cache behavior stays exactly as before.
+* Hardening: values read back from the tracking cookie are now restricted to
+  known UTM keys and capped in length.
+
 ## 3.19
 * Removed debug logging that was triggering on every request and saturating
   server logs on customer sites. Improves performance and reduces disk I/O.

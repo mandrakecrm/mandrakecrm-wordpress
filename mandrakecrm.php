@@ -3,7 +3,7 @@
  * Plugin Name: MandrakeCRM – CRM & AI Marketing Automation
  * Plugin URI: https://www.mandrakecrm.com
  * Description: Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial.
- * Version: 3.19
+ * Version: 3.20
  * Requires at least: 6.0
  * Tested up to: 6.9
  * Requires PHP: 7.4
@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin constants.
  */
-define( 'MANDRAKECRM_VERSION', '3.19' );
+define( 'MANDRAKECRM_VERSION', '3.20' );
 define( 'MANDRAKECRM_PLUGIN_FILE', __FILE__ );
 define( 'MANDRAKECRM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MANDRAKECRM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
