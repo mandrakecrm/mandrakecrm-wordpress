@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.17
+Stable tag: 3.18
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -180,6 +180,16 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.18 =
+* Marketing opt-in checkbox now inherits the store's primary brand color
+  (resolved from common theme CSS variables: Woodmart, Astra, generic
+  `--primary-color`, `--brand-color`, `--wp--preset--color--primary`, and
+  WooCommerce default). Border-left accent of the box also matches.
+* Fix: duplicate checkmark overlay in themes that decorate native checkboxes
+  with their own `::before/::after` SVG. The checkbox is now fully custom-
+  rendered with `appearance:none` plus an inline SVG checkmark, so only one
+  check is shown regardless of the theme.
 
 = 3.17 =
 * New: Cashback redemption coupons are auto-applied to the cart from a deep-link.

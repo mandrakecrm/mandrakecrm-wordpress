@@ -3,6 +3,16 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.18
+* Marketing opt-in checkbox now inherits the store's primary brand color
+  (resolved from common theme CSS variables: Woodmart, Astra, generic
+  `--primary-color`, `--brand-color`, `--wp--preset--color--primary`, and
+  WooCommerce default). Border-left accent of the box also matches.
+* Fix: duplicate checkmark overlay in themes that decorate native checkboxes
+  with their own `::before/::after` SVG. The checkbox is now fully custom-
+  rendered with `appearance:none` plus an inline SVG checkmark, so only one
+  check is shown regardless of the theme.
+
 ## 3.17
 * New: Cashback redemption coupons are auto-applied to the cart from a deep-link.
 * When the customer clicks "Aplicar agora" on the redemption widget, the URL

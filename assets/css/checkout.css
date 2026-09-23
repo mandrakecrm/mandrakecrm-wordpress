@@ -1,11 +1,31 @@
 /**
  * MandrakeCRM Checkout Styles
  *
- * Alta especificidad para prevenir override de temas/plugins
+ * v3.18:
+ *  - Accent color heredado del tema (cadena de fallbacks de variables CSS comunes).
+ *  - Checkbox custom (appearance:none) para evitar superposición de checkmarks
+ *    cuando el tema/plugin de la tienda también dibuja su propio check sobre
+ *    el nativo (problema observado en temas Astra/Woodmart/Flatsome).
+ *
  * @since 2.1.5
  */
 
-/* Contenedor principal - maxima especificidad */
+/* Resolver color primario del tema con cadena de fallbacks.
+   Cada tienda usa una variable distinta para su primary; este chain las cubre. */
+.mandrakecrm-marketing-optin {
+    --mandrakecrm-primary:
+        var(--wd-primary-color,
+        var(--astra-color-primary,
+        var(--theme-primary-color,
+        var(--primary-color,
+        var(--brand-color,
+        var(--wp--preset--color--primary,
+        var(--woocommerce,
+        #6366f1)))))));
+    --mandrakecrm-primary-soft: color-mix(in srgb, var(--mandrakecrm-primary) 8%, transparent);
+}
+
+/* Contenedor principal */
 .woocommerce div.mandrakecrm-marketing-optin,
 div.mandrakecrm-marketing-optin {
     display: block !important;
@@ -14,13 +34,13 @@ div.mandrakecrm-marketing-optin {
     padding: 15px !important;
     background: #f8f9fa !important;
     border-radius: 8px !important;
-    border-left: 4px solid #6366f1 !important;
+    border-left: 4px solid var(--mandrakecrm-primary) !important;
     box-sizing: border-box !important;
     width: 100% !important;
     clear: both !important;
 }
 
-/* Label - forzar flexbox y prevenir display: block */
+/* Label */
 .woocommerce div.mandrakecrm-marketing-optin label,
 div.mandrakecrm-marketing-optin label {
     display: flex !important;
@@ -35,9 +55,15 @@ div.mandrakecrm-marketing-optin label {
     position: relative !important;
 }
 
-/* Checkbox - dimensiones fijas y posicion correcta */
+/* Checkbox — custom render (appearance:none) para evitar doble check overlay.
+   Algunos temas inyectan ::before/::after sobre el input nativo encima del
+   checkmark del browser, causando los 2 svg superpuestos. Renderizamos
+   nosotros el checkmark vía background-image para tener control total. */
 .woocommerce div.mandrakecrm-marketing-optin input[type="checkbox"],
 div.mandrakecrm-marketing-optin input[type="checkbox"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
     position: relative !important;
     top: 0 !important;
     left: 0 !important;
@@ -50,14 +76,43 @@ div.mandrakecrm-marketing-optin input[type="checkbox"] {
     max-height: 18px !important;
     margin: 0 !important;
     padding: 0 !important;
-    accent-color: #6366f1 !important;
+    background: #fff !important;
+    background-image: none !important;
+    border: 2px solid var(--mandrakecrm-primary) !important;
+    border-radius: 4px !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
-    -webkit-appearance: checkbox !important;
-    appearance: checkbox !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: background-color .12s ease, border-color .12s ease;
 }
 
-/* Texto - flexible y con wrap correcto */
+/* Neutraliza pseudo-elementos que algunos temas inyectan sobre el input. */
+.woocommerce div.mandrakecrm-marketing-optin input[type="checkbox"]::before,
+.woocommerce div.mandrakecrm-marketing-optin input[type="checkbox"]::after,
+div.mandrakecrm-marketing-optin input[type="checkbox"]::before,
+div.mandrakecrm-marketing-optin input[type="checkbox"]::after {
+    content: none !important;
+    display: none !important;
+}
+
+.woocommerce div.mandrakecrm-marketing-optin input[type="checkbox"]:checked,
+div.mandrakecrm-marketing-optin input[type="checkbox"]:checked {
+    background-color: var(--mandrakecrm-primary) !important;
+    border-color: var(--mandrakecrm-primary) !important;
+    /* SVG checkmark blanco inline (sin doble overlay con el del tema). */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M3 8.5l3.5 3.5 7-7'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: 12px 12px !important;
+}
+
+.woocommerce div.mandrakecrm-marketing-optin input[type="checkbox"]:focus-visible,
+div.mandrakecrm-marketing-optin input[type="checkbox"]:focus-visible {
+    box-shadow: 0 0 0 3px var(--mandrakecrm-primary-soft) !important;
+}
+
+/* Texto */
 .woocommerce div.mandrakecrm-marketing-optin label span,
 div.mandrakecrm-marketing-optin label span {
     flex: 1 1 auto !important;
