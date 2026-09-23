@@ -45,9 +45,15 @@ class MandrakeCRM_Widget {
 	 *
 	 * @since 2.0.0
 	 * @since 3.12.0 Changed to use widget_token for CDN URLs
+	 * @since 3.16.0 Removed is_checkout/is_cart exclusion. The widget.js bundle
+	 *               contains ALL published widgets (reviews_badge, reviews_grid,
+	 *               popup_basic, whatsapp_button, order_bump). Each widget
+	 *               internally detects its target context (product page,
+	 *               checkout page, etc.) and renders only when applicable.
+	 *               Order_bump requires running on checkout/cart.
 	 */
 	public static function enqueue_widget_script() {
-		if ( is_admin() || is_checkout() || is_cart() ) {
+		if ( is_admin() ) {
 			return;
 		}
 
@@ -96,10 +102,11 @@ class MandrakeCRM_Widget {
 	 *
 	 * @since 2.0.0
 	 * @since 3.12.0 Now checks for widget_token instead of API token
+	 * @since 3.16.0 Removed is_checkout/is_cart exclusion (see enqueue_widget_script).
 	 * @return bool True if widget should be displayed.
 	 */
 	public static function should_display() {
-		if ( is_admin() || is_checkout() || is_cart() ) {
+		if ( is_admin() ) {
 			return false;
 		}
 

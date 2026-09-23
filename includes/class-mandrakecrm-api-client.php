@@ -95,6 +95,17 @@ class MandrakeCRM_API_Client {
 			return false;
 		}
 
+		// Resolve WooCommerce my-account URLs so the backend can build customer-facing links
+		// honoring the merchant's localized/customized slugs (e.g. /minha-conta/pedidos/).
+		$myaccount_url = '';
+		$orders_url    = '';
+		if ( function_exists( 'wc_get_page_permalink' ) ) {
+			$myaccount_url = (string) wc_get_page_permalink( 'myaccount' );
+		}
+		if ( function_exists( 'wc_get_account_endpoint_url' ) ) {
+			$orders_url = (string) wc_get_account_endpoint_url( 'orders' );
+		}
+
 		$payload = array(
 			'token'          => $token,
 			'action'         => 'heartbeat',
@@ -109,6 +120,10 @@ class MandrakeCRM_API_Client {
 				'utm_tracking'         => true,
 				'marketing_optin'      => true,
 				'abandoned_cart'       => get_option( 'mandrakecrm_abandoned_cart', '0' ) === '1',
+			),
+			'account_urls'   => array(
+				'myaccount' => $myaccount_url,
+				'orders'    => $orders_url,
 			),
 		);
 

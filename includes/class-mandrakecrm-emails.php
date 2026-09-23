@@ -800,6 +800,7 @@ class MandrakeCRM_Emails {
 		'customer_phone'      => $order->get_billing_phone(),
 		'customer_country'    => $order->get_billing_country(),
 		'order_data'          => array(
+			'order_id'         => $order->get_id(),
 			'number'           => $order->get_order_number(),
 			'date'             => $order->get_date_created()->date( 'Y-m-d' ),
 			'status'           => $order->get_status(),

@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.13
+Stable tag: 3.16
 WC requires at least: 8.0
 WC tested up to: 9.5
 License: GPL v2 or later
@@ -181,6 +181,17 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.16 =
+* Widget script now loads on checkout and cart pages to support Order Bump and other checkout widgets
+* No behavior change for product/home/shop pages — existing widgets continue working as before
+* Each widget in the bundle internally detects its applicable context
+
+= 3.15 =
+* Internal release — version bump for plugin maintenance
+
+= 3.14 =
+* Internal release — version bump for plugin maintenance
+
 = 3.13 =
 * Renaming popup → widget across the entire plugin interface
 * Stability and performance improvements
@@ -204,6 +215,9 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.16 =
+Enables widget loading on checkout/cart pages. Required for Order Bump and other checkout-context widgets.
 
 = 3.13 =
 Renaming popup → widget. Stability improvements.
