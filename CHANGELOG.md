@@ -3,6 +3,10 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.13
+* Renaming popup → widget across the entire plugin interface
+* Stability and performance improvements
+
 ## 3.12
 * Added Privacy Policy and Terms of Service pages
 * Improved compliance with WordPress.org plugin guidelines

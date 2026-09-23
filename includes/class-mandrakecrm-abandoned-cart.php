@@ -362,10 +362,13 @@ class MandrakeCRM_Abandoned_Cart {
 			}
 		}
 
-		// Priority 3: Generate NEW hash with timestamp for multi-cycle support.
+		// Priority 3: Generate NEW deterministic hash with cycle counter.
+		// Uses cycle counter instead of time() to prevent race condition
+		// when parallel requests (add-to-cart + cart fragments) generate different hashes.
 		$session_key = WC()->session ? WC()->session->get_customer_id() : '';
 		$site_url    = get_site_url();
-		$new_hash    = md5( $session_key . ':' . $site_url . ':' . time() );
+		$cycle       = WC()->session ? (int) WC()->session->get( 'mandrakecrm_cart_cycle', 0 ) : 0;
+		$new_hash    = md5( $session_key . ':' . $site_url . ':' . $cycle );
 
 		// Persist for consistency during this cycle.
 		if ( WC()->session ) {
@@ -591,13 +594,15 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// v2.2.0: If previous cart was recovered, start NEW cycle.
 		if ( $existing && 'recovered' === $existing->status ) {
-			// Clear session hashes to force new cycle.
+			// Clear session hashes and increment cycle for new unique hash.
 			if ( WC()->session ) {
 				WC()->session->__unset( 'mandrakecrm_current_cart_hash' );
 				WC()->session->__unset( 'mandrakecrm_abandoned_cart_hash' );
+				$new_cycle = (int) WC()->session->get( 'mandrakecrm_cart_cycle', 0 ) + 1;
+				WC()->session->set( 'mandrakecrm_cart_cycle', $new_cycle );
 			}
 
-			// Regenerate hash (will create new one with timestamp).
+			// Regenerate hash (deterministic with new cycle value).
 			$cart_hash = self::generate_cart_hash();
 
 			// Force INSERT instead of UPDATE.
@@ -701,7 +706,10 @@ class MandrakeCRM_Abandoned_Cart {
 			}
 		} else {
 			// Insert new record with customer data.
-			$wpdb->insert(
+			// Suppress errors: parallel request may INSERT same deterministic hash,
+			// causing expected duplicate key error handled below.
+			$wpdb->suppress_errors( true );
+			$result = $wpdb->insert(
 				$table_name,
 				array(
 					'cart_hash'        => $cart_hash,
@@ -719,6 +727,13 @@ class MandrakeCRM_Abandoned_Cart {
 					'created_at'       => $now,
 				)
 			);
+			$wpdb->suppress_errors( false );
+
+			if ( false === $result ) {
+				// Parallel request already inserted with same deterministic hash.
+				// Both requests have identical cart data (same session), so no update needed.
+				return;
+			}
 
 			$cart_id = $wpdb->insert_id;
 

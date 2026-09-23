@@ -214,16 +214,16 @@ msgstr ""
 "Cancelado, Falhou e Redefinir Senha."
 
 #: includes/class-mandrakecrm-admin.php:420
-msgid "Smart Lead Capture Popup"
-msgstr "Popup Inteligente de Captura de Leads"
+msgid "Smart Lead Capture Widgets"
+msgstr "Widgets Inteligentes de Captura de Leads"
 
 #: includes/class-mandrakecrm-admin.php:421
 msgid ""
-"Convert visitors into customers with exit-intent popups that build your "
-"email list and nurture relationships."
+"Convert visitors into customers with smart widgets: lead capture popups, "
+"WhatsApp buttons, and more."
 msgstr ""
-"Converta visitantes em clientes com popups de intenção de saída que constroem "
-"sua lista de e-mails e nutrem relacionamentos."
+"Converta visitantes em clientes com widgets inteligentes: popups de captura "
+"de leads, botoes de WhatsApp e mais."
 
 #: includes/class-mandrakecrm-admin.php:436
 msgid "Checkout Marketing Consent"

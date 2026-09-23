@@ -214,16 +214,16 @@ msgstr ""
 "Reembolsado, Cancelado, Fallido y Restablecer Contraseña."
 
 #: includes/class-mandrakecrm-admin.php:420
-msgid "Smart Lead Capture Popup"
-msgstr "Popup Inteligente de Captura de Leads"
+msgid "Smart Lead Capture Widgets"
+msgstr "Widgets Inteligentes de Captura de Leads"
 
 #: includes/class-mandrakecrm-admin.php:421
 msgid ""
-"Convert visitors into customers with exit-intent popups that build your "
-"email list and nurture relationships."
+"Convert visitors into customers with smart widgets: lead capture popups, "
+"WhatsApp buttons, and more."
 msgstr ""
-"Convierte visitantes en clientes con popups de intención de salida que "
-"construyen tu lista de correos y nutren relaciones."
+"Convierte visitantes en clientes con widgets inteligentes: popups de captura "
+"de leads, botones de WhatsApp y mas."
 
 #: includes/class-mandrakecrm-admin.php:436
 msgid "Checkout Marketing Consent"

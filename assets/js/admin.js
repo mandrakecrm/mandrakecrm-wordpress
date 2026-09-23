@@ -118,7 +118,7 @@
 				action: 'mandrakecrm_save_settings',
 				nonce: mandrakecrm.nonce,
 				mandrakecrm_transactional_emails: $('input[name="mandrakecrm_transactional_emails"]').is(':checked') ? '1' : '0',
-				mandrakecrm_popup_option: $('input[name="mandrakecrm_popup_option"]').is(':checked') ? '1' : '0',
+				mandrakecrm_widget_option: $('input[name="mandrakecrm_widget_option"]').is(':checked') ? '1' : '0',
 				mandrakecrm_abandoned_cart: $('input[name="mandrakecrm_abandoned_cart"]').is(':checked') ? '1' : '0'
 			};
 

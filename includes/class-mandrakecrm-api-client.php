@@ -105,7 +105,7 @@ class MandrakeCRM_API_Client {
 			'site_url'       => home_url(),
 			'features'       => array(
 				'transactional_emails' => get_option( 'mandrakecrm_transactional_emails', '0' ) === '1',
-				'popup_leads'          => get_option( 'mandrakecrm_popup_option', '0' ) === '1',
+				'widget_leads'         => get_option( 'mandrakecrm_widget_option', '0' ) === '1',
 				'utm_tracking'         => true,
 				'marketing_optin'      => true,
 				'abandoned_cart'       => get_option( 'mandrakecrm_abandoned_cart', '0' ) === '1',

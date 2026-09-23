@@ -22,8 +22,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 $options = array(
 	'mandrakecrm_token',
 	'mandrakecrm_transactional_emails',
-	'mandrakecrm_popup_option',
-	'mandrakecrm_encryption_key',
+	'mandrakecrm_widget_option',
+	'mandrakecrm_widget_token',
 	'mandrakecrm_abandoned_cart',
 );
 

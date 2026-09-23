@@ -213,16 +213,16 @@ msgstr ""
 "Failed, and Password Reset."
 
 #: includes/class-mandrakecrm-admin.php:420
-msgid "Smart Lead Capture Popup"
-msgstr "Smart Lead Capture Popup"
+msgid "Smart Lead Capture Widgets"
+msgstr "Smart Lead Capture Widgets"
 
 #: includes/class-mandrakecrm-admin.php:421
 msgid ""
-"Convert visitors into customers with exit-intent popups that build your "
-"email list and nurture relationships."
+"Convert visitors into customers with smart widgets: lead capture popups, "
+"WhatsApp buttons, and more."
 msgstr ""
-"Convert visitors into customers with exit-intent popups that build your "
-"email list and nurture relationships."
+"Convert visitors into customers with smart widgets: lead capture popups, "
+"WhatsApp buttons, and more."
 
 #: includes/class-mandrakecrm-admin.php:436
 msgid "Checkout Marketing Consent"

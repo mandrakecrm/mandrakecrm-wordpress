@@ -271,7 +271,7 @@ class MandrakeCRM_Admin {
 
 		$token                = get_option( 'mandrakecrm_token', '' );
 		$transactional_emails = get_option( 'mandrakecrm_transactional_emails', '0' );
-		$popup_option         = get_option( 'mandrakecrm_popup_option', '0' );
+		$widget_option        = get_option( 'mandrakecrm_widget_option', '0' );
 
 		$connection_status = array(
 			'connected'  => false,
@@ -419,15 +419,15 @@ class MandrakeCRM_Admin {
 
 					<div class="mandrakecrm-feature">
 						<div class="mandrakecrm-feature__info">
-							<h3><?php esc_html_e('Smart Lead Capture Popup', 'mandrakecrm' ); ?></h3>
-							<p><?php esc_html_e('Convert visitors into customers with exit-intent popups that build your email list and nurture relationships.', 'mandrakecrm' ); ?></p>
+							<h3><?php esc_html_e('Smart Lead Capture Widgets', 'mandrakecrm' ); ?></h3>
+							<p><?php esc_html_e('Convert visitors into customers with smart widgets: lead capture popups, WhatsApp buttons, and more.', 'mandrakecrm' ); ?></p>
 						</div>
 						<label class="mandrakecrm-toggle">
 							<input
 								type="checkbox"
-								name="mandrakecrm_popup_option"
+								name="mandrakecrm_widget_option"
 								value="1"
-								<?php checked( $popup_option, '1' ); ?>
+								<?php checked( $widget_option, '1' ); ?>
 							/>
 							<span class="mandrakecrm-toggle__slider"></span>
 						</label>
@@ -570,8 +570,16 @@ class MandrakeCRM_Admin {
 		$result = MandrakeCRM_API_Client::verify_token( $token );
 
 		if ( ! empty( $result['valid'] ) && true === $result['valid'] ) {
-			// Token válido - guardarlo inmediatamente
+			// Token valid - save immediately
 			update_option( 'mandrakecrm_token', $token );
+
+			// Save widget_token for CDN popup URL
+			if ( ! empty( $result['widget_token'] ) ) {
+				update_option( 'mandrakecrm_widget_token', sanitize_text_field( $result['widget_token'] ) );
+			}
+
+			// Send heartbeat to update plugin_status with token_verified: true
+			MandrakeCRM_API_Client::sync_status();
 
 			wp_send_json_success(
 				array(
@@ -580,8 +588,9 @@ class MandrakeCRM_Admin {
 				)
 			);
 		} else {
-			// Token inválido - BORRAR solo el token, mantener opciones
+			// Token invalid - DELETE only the token, keep options
 			delete_option( 'mandrakecrm_token' );
+			delete_option( 'mandrakecrm_widget_token' );
 
 			$error = isset( $result['error'] ) ? $result['error'] : __('Invalid token', 'mandrakecrm' );
 			wp_send_json_error( array( 'message' => $error ) );
@@ -604,26 +613,26 @@ class MandrakeCRM_Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$transactional_emails = isset( $_POST['mandrakecrm_transactional_emails'] ) ? sanitize_text_field( wp_unslash( $_POST['mandrakecrm_transactional_emails'] ) ) : '0';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$popup_option         = isset( $_POST['mandrakecrm_popup_option'] ) ? sanitize_text_field( wp_unslash( $_POST['mandrakecrm_popup_option'] ) ) : '0';
+		$widget_option        = isset( $_POST['mandrakecrm_widget_option'] ) ? sanitize_text_field( wp_unslash( $_POST['mandrakecrm_widget_option'] ) ) : '0';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$abandoned_cart       = isset( $_POST['mandrakecrm_abandoned_cart'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['mandrakecrm_abandoned_cart'] ) ) ? '1' : '0';
 
 		// Logging for debug
-		error_log( 'MandrakeCRM: Saving settings - transactional_emails=' . $transactional_emails . ', popup=' . $popup_option . ', abandoned_cart=' . $abandoned_cart );
+		error_log( 'MandrakeCRM: Saving settings - transactional_emails=' . $transactional_emails . ', widget=' . $widget_option . ', abandoned_cart=' . $abandoned_cart );
 
 		// Save options only (token stays as-is from verification)
 		update_option( 'mandrakecrm_transactional_emails', $transactional_emails );
-		update_option( 'mandrakecrm_popup_option', $popup_option );
+		update_option( 'mandrakecrm_widget_option', $widget_option );
 		update_option( 'mandrakecrm_abandoned_cart', $abandoned_cart );
 
 		// Verify that options were saved correctly
 		$verify_transactional = get_option( 'mandrakecrm_transactional_emails' );
-		$verify_popup         = get_option( 'mandrakecrm_popup_option' );
+		$verify_widget        = get_option( 'mandrakecrm_widget_option' );
 		$verify_abandoned_cart = get_option( 'mandrakecrm_abandoned_cart' );
 
-		error_log( 'MandrakeCRM: Verified - transactional_emails=' . $verify_transactional . ', popup=' . $verify_popup . ', abandoned_cart=' . $verify_abandoned_cart );
+		error_log( 'MandrakeCRM: Verified - transactional_emails=' . $verify_transactional . ', widget=' . $verify_widget . ', abandoned_cart=' . $verify_abandoned_cart );
 
-		if ( $verify_transactional !== $transactional_emails || $verify_popup !== $popup_option || $verify_abandoned_cart !== $abandoned_cart ) {
+		if ( $verify_transactional !== $transactional_emails || $verify_widget !== $widget_option || $verify_abandoned_cart !== $abandoned_cart ) {
 			error_log( 'MandrakeCRM: ERROR - Options not saved correctly!' );
 			wp_send_json_error( array( 'message' => __('Failed to save settings', 'mandrakecrm' ) ) );
 			return;
@@ -658,8 +667,9 @@ class MandrakeCRM_Admin {
 			MandrakeCRM_API_Client::notify_disconnection();
 		}
 
-		// Remove token only - preserve feature options for reconnection
+		// Remove tokens only - preserve feature options for reconnection
 		delete_option( 'mandrakecrm_token' );
+		delete_option( 'mandrakecrm_widget_token' );
 
 		// Logging
 		error_log( 'MandrakeCRM: Integration disconnected by user' );

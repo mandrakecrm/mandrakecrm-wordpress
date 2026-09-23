@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: MandrakeCRM – E-commerce CRM & AI Marketing Automation
+ * Plugin Name: MandrakeCRM – CRM & AI Marketing Automation
  * Plugin URI: https://www.mandrakecrm.com
  * Description: Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial.
- * Version: 3.12
+ * Version: 3.13
  * Requires at least: 6.0
  * Tested up to: 6.9
  * Requires PHP: 7.4
@@ -31,11 +31,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin constants.
  */
-define( 'MANDRAKECRM_VERSION', '3.12' );
+define( 'MANDRAKECRM_VERSION', '3.13' );
 define( 'MANDRAKECRM_PLUGIN_FILE', __FILE__ );
 define( 'MANDRAKECRM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MANDRAKECRM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'MANDRAKECRM_API_BASE', 'https://pzjjfecnkiaaniwtlydr.supabase.co/functions/v1' );
+define( 'MANDRAKECRM_API_BASE', 'https://mandrakecrm.supabase.co/functions/v1' );
 define( 'MANDRAKECRM_CDN_BASE', 'https://cdn.mandrakecrm.io' );
 
 /**
@@ -122,14 +122,14 @@ function mandrakecrm_init() {
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-admin.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-emails.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-utm.php';
-	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-popup.php';
+	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-widget.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-checkout.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-abandoned-cart.php';
 
 	MandrakeCRM_Admin::init();
 	MandrakeCRM_Emails::init();
 	MandrakeCRM_UTM::init();
-	MandrakeCRM_Popup::init();
+	MandrakeCRM_Widget::init();
 	MandrakeCRM_Checkout::init();
 	MandrakeCRM_Abandoned_Cart::init();
 
@@ -162,7 +162,7 @@ function mandrakecrm_enqueue_checkout_styles() {
 function mandrakecrm_activate() {
 	add_option( 'mandrakecrm_token', '' );
 	add_option( 'mandrakecrm_transactional_emails', '0' );
-	add_option( 'mandrakecrm_popup_option', '0' );
+	add_option( 'mandrakecrm_widget_option', '0' );
 
 	if ( ! wp_next_scheduled( 'mandrakecrm_daily_sync' ) ) {
 		wp_schedule_event( time(), 'daily', 'mandrakecrm_daily_sync' );
