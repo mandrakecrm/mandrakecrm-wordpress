@@ -2,354 +2,316 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM | Marketing Automation and AI 3.12\n"
+"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.23\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-01-14T02:11:58+00:00\n"
-"PO-Revision-Date: 2026-01-14T02:11:58+00:00\n"
+"POT-Creation-Date: 2026-09-23T07:59:47+00:00\n"
+"PO-Revision-Date: 2026-09-23 08:00+0000\n"
+"Language: en_GB\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mandrakecrm\n"
-"Language: en_GB\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. Plugin Name of the plugin
-#: mandrakecrm.php
-msgid "MandrakeCRM | E-commerce CRM & AI Marketing Automation"
-msgstr "MandrakeCRM | E-commerce CRM & AI Marketing Automation"
-
 #. Plugin URI of the plugin
-#. Author URI of the plugin
 #: mandrakecrm.php
 msgid "https://www.mandrakecrm.com"
 msgstr "https://www.mandrakecrm.com"
 
 #. Description of the plugin
 #: mandrakecrm.php
-msgid ""
-"Recover abandoned carts. Email marketing campaigns. Track campaign ROI. "
-"Connect your store in minutes. Start free 7-day trial."
-msgstr ""
-"Recover abandoned carts. Email marketing campaigns. Track campaign ROI. "
-"Connect your store in minutes. Start free 7-day trial."
+msgid "Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial."
+msgstr "Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial."
 
 #. Author of the plugin
-#: mandrakecrm.php includes/class-mandrakecrm-admin.php:67
+#: mandrakecrm.php
 #: includes/class-mandrakecrm-admin.php:68
-#: includes/class-mandrakecrm-admin.php:115
-#: includes/class-mandrakecrm-admin.php:301
+#: includes/class-mandrakecrm-admin.php:69
+#: includes/class-mandrakecrm-admin.php:116
+#: includes/class-mandrakecrm-admin.php:303
 msgid "MandrakeCRM"
 msgstr "MandrakeCRM"
 
 #. translators: %d: number of minutes
-#: includes/class-mandrakecrm-abandoned-cart.php:148
+#: includes/class-mandrakecrm-abandoned-cart.php:149
 #, php-format
 msgid "Every %d Minutes"
 msgstr "Every %d Minutes"
 
-#: includes/class-mandrakecrm-admin.php:116
+#: includes/class-mandrakecrm-admin.php:117
 msgid "MandrakeCRM Dashboard & Settings"
 msgstr "MandrakeCRM Dashboard & Settings"
 
-#: includes/class-mandrakecrm-admin.php:129
+#: includes/class-mandrakecrm-admin.php:130
 msgid "Dashboard"
 msgstr "Dashboard"
 
-#: includes/class-mandrakecrm-admin.php:134
+#: includes/class-mandrakecrm-admin.php:135
 msgid "Open MandrakeCRM Dashboard"
 msgstr "Open MandrakeCRM Dashboard"
 
-#: includes/class-mandrakecrm-admin.php:144 mandrakecrm.php:212
+#: includes/class-mandrakecrm-admin.php:145
+#: mandrakecrm.php:226
 msgid "Settings"
 msgstr "Settings"
 
-#: includes/class-mandrakecrm-admin.php:147
+#: includes/class-mandrakecrm-admin.php:148
 msgid "Plugin Settings"
 msgstr "Plugin Settings"
 
-#: includes/class-mandrakecrm-admin.php:223
+#: includes/class-mandrakecrm-admin.php:224
 msgid "Connecting..."
 msgstr "Connecting..."
 
-#: includes/class-mandrakecrm-admin.php:224
+#: includes/class-mandrakecrm-admin.php:225
 msgid "Saving..."
 msgstr "Saving..."
 
-#: includes/class-mandrakecrm-admin.php:225
+#: includes/class-mandrakecrm-admin.php:226
 msgid "Connected"
 msgstr "Connected"
 
-#: includes/class-mandrakecrm-admin.php:226
-#: includes/class-mandrakecrm-admin.php:317
+#: includes/class-mandrakecrm-admin.php:227
+#: includes/class-mandrakecrm-admin.php:319
 msgid "Disconnected"
 msgstr "Disconnected"
 
-#: includes/class-mandrakecrm-admin.php:227
+#: includes/class-mandrakecrm-admin.php:228
 msgid "Error"
 msgstr "Error"
 
-#: includes/class-mandrakecrm-admin.php:228
+#: includes/class-mandrakecrm-admin.php:229
 msgid "Settings saved"
 msgstr "Settings saved"
 
-#: includes/class-mandrakecrm-admin.php:229
+#: includes/class-mandrakecrm-admin.php:230
 msgid "Disconnecting..."
 msgstr "Disconnecting..."
 
-#: includes/class-mandrakecrm-admin.php:230
+#: includes/class-mandrakecrm-admin.php:231
 msgid "Integration disconnected successfully. Redirecting..."
 msgstr "Integration disconnected successfully. Redirecting..."
 
-#: includes/class-mandrakecrm-admin.php:231
-#: includes/class-mandrakecrm-admin.php:345
+#: includes/class-mandrakecrm-admin.php:232
+#: includes/class-mandrakecrm-admin.php:347
 msgid "Connect"
 msgstr "Connect"
 
 #. translators: %s: store name
-#: includes/class-mandrakecrm-admin.php:232
-#: includes/class-mandrakecrm-admin.php:313
+#: includes/class-mandrakecrm-admin.php:234
+#: includes/class-mandrakecrm-admin.php:315
 #, php-format
 msgid "Connected to %s"
 msgstr "Connected to %s"
 
-#: includes/class-mandrakecrm-admin.php:233
-#: includes/class-mandrakecrm-admin.php:452
+#: includes/class-mandrakecrm-admin.php:235
+#: includes/class-mandrakecrm-admin.php:454
 msgid "Save Changes"
 msgstr "Save Changes"
 
-#: includes/class-mandrakecrm-admin.php:234
+#: includes/class-mandrakecrm-admin.php:236
 msgid "Yes, Disconnect"
 msgstr "Yes, Disconnect"
 
-#: includes/class-mandrakecrm-admin.php:235
+#: includes/class-mandrakecrm-admin.php:237
 msgid "Error disconnecting integration"
 msgstr "Error disconnecting integration"
 
-#: includes/class-mandrakecrm-admin.php:267
+#: includes/class-mandrakecrm-admin.php:269
 msgid "You do not have permission to access this page."
 msgstr "You do not have permission to access this page."
 
-#: includes/class-mandrakecrm-admin.php:291
+#: includes/class-mandrakecrm-admin.php:293
 msgid "MandrakeCRM Plugin Header"
 msgstr "MandrakeCRM Plugin Header"
 
-#: includes/class-mandrakecrm-admin.php:294
+#: includes/class-mandrakecrm-admin.php:296
 msgid "MandrakeCRM Logo"
 msgstr "MandrakeCRM Logo"
 
-#: includes/class-mandrakecrm-admin.php:302
+#: includes/class-mandrakecrm-admin.php:304
 msgid "Sell more in your e-commerce without being a marketing expert"
 msgstr "Sell more in your e-commerce without being a marketing expert"
 
-#: includes/class-mandrakecrm-admin.php:328
+#: includes/class-mandrakecrm-admin.php:330
 msgid "Integration"
 msgstr "Integration"
 
-#: includes/class-mandrakecrm-admin.php:332
+#: includes/class-mandrakecrm-admin.php:334
 msgid "Token"
 msgstr "Token"
 
-#: includes/class-mandrakecrm-admin.php:339
+#: includes/class-mandrakecrm-admin.php:341
 msgid "Enter your MandrakeCRM token"
 msgstr "Enter your MandrakeCRM token"
 
-#: includes/class-mandrakecrm-admin.php:350
+#: includes/class-mandrakecrm-admin.php:352
 msgid "Disconnect"
 msgstr "Disconnect"
 
 #. translators: %s: link to MandrakeCRM website
-#: includes/class-mandrakecrm-admin.php:358
+#: includes/class-mandrakecrm-admin.php:360
 #, php-format
-msgid ""
-"Don't have an account yet? %s for a 7-day free trial and start selling more!"
-msgstr ""
-"Don't have an account yet? %s for a 7-day free trial and start selling more!"
+msgid "Don't have an account yet? %s for a 7-day free trial and start selling more!"
+msgstr "Don't have an account yet? %s for a 7-day free trial and start selling more!"
 
-#: includes/class-mandrakecrm-admin.php:359
+#: includes/class-mandrakecrm-admin.php:361
 msgid "Sign up"
 msgstr "Sign up"
 
 #. translators: %s: link to get token
-#: includes/class-mandrakecrm-admin.php:367
+#: includes/class-mandrakecrm-admin.php:369
 #, php-format
 msgid "Already have an account? Get your token at %s"
 msgstr "Already have an account? Get your token at %s"
 
-#: includes/class-mandrakecrm-admin.php:368
+#: includes/class-mandrakecrm-admin.php:370
 msgid "Settings &rarr; Store"
 msgstr "Settings &rarr; Store"
 
-#: includes/class-mandrakecrm-admin.php:383
+#: includes/class-mandrakecrm-admin.php:385
 msgid "Features"
 msgstr "Features"
 
-#: includes/class-mandrakecrm-admin.php:389
+#: includes/class-mandrakecrm-admin.php:391
 msgid "Abandoned Cart Recovery"
 msgstr "Abandoned Cart Recovery"
 
-#: includes/class-mandrakecrm-admin.php:390
-msgid ""
-"Automatically recover lost sales with targeted emails to customers who left "
-"items in their cart."
-msgstr ""
-"Automatically recover lost sales with targeted emails to customers who left "
-"items in their cart."
+#: includes/class-mandrakecrm-admin.php:392
+msgid "Automatically recover lost sales with targeted emails to customers who left items in their cart."
+msgstr "Automatically recover lost sales with targeted emails to customers who left items in their cart."
 
-#: includes/class-mandrakecrm-admin.php:404
+#: includes/class-mandrakecrm-admin.php:406
 msgid "Transactional Emails"
 msgstr "Transactional Emails"
 
-#: includes/class-mandrakecrm-admin.php:405
-msgid ""
-"Replace default WooCommerce emails with beautiful MandrakeCRM templates: New "
-"Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, "
-"Failed, and Password Reset."
-msgstr ""
-"Replace default WooCommerce emails with beautiful MandrakeCRM templates: New "
-"Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, "
-"Failed, and Password Reset."
+#: includes/class-mandrakecrm-admin.php:407
+msgid "Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, Failed, and Password Reset."
+msgstr "Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, Failed, and Password Reset."
 
-#: includes/class-mandrakecrm-admin.php:420
+#: includes/class-mandrakecrm-admin.php:422
 msgid "Smart Lead Capture Widgets"
 msgstr "Smart Lead Capture Widgets"
 
-#: includes/class-mandrakecrm-admin.php:421
-msgid ""
-"Convert visitors into customers with smart widgets: lead capture popups, "
-"WhatsApp buttons, and more."
-msgstr ""
-"Convert visitors into customers with smart widgets: lead capture popups, "
-"WhatsApp buttons, and more."
+#: includes/class-mandrakecrm-admin.php:423
+msgid "Convert visitors into customers with smart widgets: lead capture popups, WhatsApp buttons, and more."
+msgstr "Convert visitors into customers with smart widgets: lead capture popups, WhatsApp buttons, and more."
 
-#: includes/class-mandrakecrm-admin.php:436
+#: includes/class-mandrakecrm-admin.php:438
 msgid "Checkout Marketing Consent"
 msgstr "Checkout Marketing Consent"
 
-#: includes/class-mandrakecrm-admin.php:437
-msgid ""
-"Grow your subscriber list by collecting marketing consent during checkout."
-msgstr ""
-"Grow your subscriber list by collecting marketing consent during checkout."
-
 #: includes/class-mandrakecrm-admin.php:439
-#: includes/class-mandrakecrm-admin.php:447
+msgid "Grow your subscriber list by collecting marketing consent during checkout."
+msgstr "Grow your subscriber list by collecting marketing consent during checkout."
+
+#: includes/class-mandrakecrm-admin.php:441
+#: includes/class-mandrakecrm-admin.php:449
 msgid "Always On"
 msgstr "Always On"
 
-#: includes/class-mandrakecrm-admin.php:444
+#: includes/class-mandrakecrm-admin.php:446
 msgid "Marketing Attribution Tracking"
 msgstr "Marketing Attribution Tracking"
 
-#: includes/class-mandrakecrm-admin.php:445
-msgid ""
-"Track UTM parameters to measure campaign ROI and attribute sales to your "
-"MandrakeCRM campaigns."
-msgstr ""
-"Track UTM parameters to measure campaign ROI and attribute sales to your "
-"MandrakeCRM campaigns."
+#: includes/class-mandrakecrm-admin.php:447
+msgid "Track UTM parameters to measure campaign ROI and attribute sales to your MandrakeCRM campaigns."
+msgstr "Track UTM parameters to measure campaign ROI and attribute sales to your MandrakeCRM campaigns."
 
-#: includes/class-mandrakecrm-admin.php:463
+#: includes/class-mandrakecrm-admin.php:465
 msgid "Support & Resources"
 msgstr "Support & Resources"
 
-#: includes/class-mandrakecrm-admin.php:468
+#: includes/class-mandrakecrm-admin.php:470
 msgid "Dashboard:"
 msgstr "Dashboard:"
 
-#: includes/class-mandrakecrm-admin.php:472
+#: includes/class-mandrakecrm-admin.php:474
 msgid "Website:"
 msgstr "Website:"
 
-#: includes/class-mandrakecrm-admin.php:476
+#: includes/class-mandrakecrm-admin.php:478
 msgid "Support:"
 msgstr "Support:"
 
 #. translators: %1$s: year, %2$s: plugin version
-#: includes/class-mandrakecrm-admin.php:487
+#: includes/class-mandrakecrm-admin.php:489
 #, php-format
 msgid "%1$s &bull; MandrakeCRM v%2$s"
 msgstr "%1$s &bull; MandrakeCRM v%2$s"
 
-#: includes/class-mandrakecrm-admin.php:500
+#: includes/class-mandrakecrm-admin.php:502
 msgid "Are you sure you want to disconnect?"
 msgstr "Are you sure you want to disconnect?"
 
-#: includes/class-mandrakecrm-admin.php:501
+#: includes/class-mandrakecrm-admin.php:503
 msgid "Close"
 msgstr "Close"
 
-#: includes/class-mandrakecrm-admin.php:509
+#: includes/class-mandrakecrm-admin.php:511
 msgid "Warning: Disconnecting will hurt your sales"
 msgstr "Warning: Disconnecting will hurt your sales"
 
-#: includes/class-mandrakecrm-admin.php:515
+#: includes/class-mandrakecrm-admin.php:517
 msgid "You'll lose automated emails that drive repeat purchases"
 msgstr "You'll lose automated emails that drive repeat purchases"
 
-#: includes/class-mandrakecrm-admin.php:519
+#: includes/class-mandrakecrm-admin.php:521
 msgid "You'll stop capturing new leads and potential customers"
 msgstr "You'll stop capturing new leads and potential customers"
 
-#: includes/class-mandrakecrm-admin.php:523
+#: includes/class-mandrakecrm-admin.php:525
 msgid "You'll lose visibility into what's actually working to drive sales"
 msgstr "You'll lose visibility into what's actually working to drive sales"
 
-#: includes/class-mandrakecrm-admin.php:528
-msgid ""
-"Without MandrakeCRM, you could be leaving money on the table every single "
-"day."
-msgstr ""
-"Without MandrakeCRM, you could be leaving money on the table every single "
-"day."
+#: includes/class-mandrakecrm-admin.php:530
+msgid "Without MandrakeCRM, you could be leaving money on the table every single day."
+msgstr "Without MandrakeCRM, you could be leaving money on the table every single day."
 
-#: includes/class-mandrakecrm-admin.php:535
+#: includes/class-mandrakecrm-admin.php:537
 msgid "Cancel"
 msgstr "Cancel"
 
-#: includes/class-mandrakecrm-admin.php:539
+#: includes/class-mandrakecrm-admin.php:541
 msgid "Disconnect Anyway"
 msgstr "Disconnect Anyway"
 
-#: includes/class-mandrakecrm-admin.php:559
-#: includes/class-mandrakecrm-admin.php:598
-#: includes/class-mandrakecrm-admin.php:649
+#: includes/class-mandrakecrm-admin.php:561
+#: includes/class-mandrakecrm-admin.php:609
+#: includes/class-mandrakecrm-admin.php:654
 msgid "Permission denied"
 msgstr "Permission denied"
 
-#: includes/class-mandrakecrm-admin.php:565
+#: includes/class-mandrakecrm-admin.php:567
 msgid "Token is required"
 msgstr "Token is required"
 
-#: includes/class-mandrakecrm-admin.php:576
+#: includes/class-mandrakecrm-admin.php:586
 msgid "Token verified successfully"
 msgstr "Token verified successfully"
 
-#: includes/class-mandrakecrm-admin.php:584
+#: includes/class-mandrakecrm-admin.php:595
 msgid "Invalid token"
 msgstr "Invalid token"
 
-#: includes/class-mandrakecrm-admin.php:626
+#: includes/class-mandrakecrm-admin.php:631
 msgid "Failed to save settings"
 msgstr "Failed to save settings"
 
-#: includes/class-mandrakecrm-admin.php:636
+#: includes/class-mandrakecrm-admin.php:641
 msgid "Settings saved successfully"
 msgstr "Settings saved successfully"
 
-#: includes/class-mandrakecrm-admin.php:666
+#: includes/class-mandrakecrm-admin.php:669
 msgid "Integration disconnected successfully"
 msgstr "Integration disconnected successfully"
 
 #: includes/class-mandrakecrm-checkout.php:74
-msgid ""
-"I would like to receive marketing emails about promotions, new products, and "
-"exclusive offers."
-msgstr ""
-"I would like to receive marketing emails about promotions, new products, and "
-"exclusive offers."
+msgid "I would like to receive marketing emails about promotions, new products, and exclusive offers."
+msgstr "I would like to receive marketing emails about promotions, new products, and exclusive offers."
 
 #: includes/class-mandrakecrm-checkout.php:117
 msgid "Marketing Consent:"
@@ -363,32 +325,32 @@ msgstr "Subscribed"
 msgid "Not Subscribed"
 msgstr "Not Subscribed"
 
-#: includes/class-mandrakecrm-utm.php:186
+#: includes/class-mandrakecrm-utm.php:347
 msgid "MandrakeCRM UTM Tracking"
 msgstr "MandrakeCRM UTM Tracking"
 
-#: includes/class-mandrakecrm-utm.php:204
+#: includes/class-mandrakecrm-utm.php:365
 msgid "Captured"
 msgstr "Captured"
 
-#. translators: %s: WooCommerce plugin name
-#: mandrakecrm.php:87
+#. translators: %1$s: MandrakeCRM, %2$s: WooCommerce, %3$s: Install link
+#: mandrakecrm.php:95
 #, php-format
 msgid "%1$s requires %2$s to be installed and active."
 msgstr "%1$s requires %2$s to be installed and active."
 
-#: includes/class-mandrakecrm-admin.php:695
+#: includes/class-mandrakecrm-admin.php:697
 msgid "MandrakeCRM API Connection Issue"
 msgstr "MandrakeCRM API Connection Issue"
 
 #. translators: %d: number of failed email attempts
-#: includes/class-mandrakecrm-admin.php:700
+#: includes/class-mandrakecrm-admin.php:703
 #, php-format
 msgid "We detected %d failed attempts to send transactional emails via MandrakeCRM API. Your customers are receiving emails via WordPress fallback, but this may indicate a connection issue."
 msgstr "We detected %d failed attempts to send transactional emails via MandrakeCRM API. Your customers are receiving emails via WordPress fallback, but this may indicate a connection issue."
 
 #. translators: %s: support email address
-#: includes/class-mandrakecrm-admin.php:708
+#: includes/class-mandrakecrm-admin.php:712
 #, php-format
 msgid "Please verify your internet connection and MandrakeCRM token. If the issue persists, contact support at %s"
 msgstr "Please verify your internet connection and MandrakeCRM token. If the issue persists, contact support at %s"
@@ -396,3 +358,8 @@ msgstr "Please verify your internet connection and MandrakeCRM token. If the iss
 #: mandrakecrm.php:101
 msgid "Install WooCommerce"
 msgstr "Install WooCommerce"
+
+#. Plugin Name of the plugin
+#: mandrakecrm.php
+msgid "MandrakeCRM – CRM & AI Marketing Automation"
+msgstr "MandrakeCRM – CRM & AI Marketing Automation"

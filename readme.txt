@@ -5,9 +5,9 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.22
+Stable tag: 3.23
 WC requires at least: 8.0
-WC tested up to: 9.5
+WC tested up to: 11.1
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -181,6 +181,12 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.23 =
+* Tested up to WooCommerce 11.1.
+* Translations updated: the bundled .pot now matches every string in the plugin,
+  and the English (UK), Spanish and Portuguese (Brazil and Portugal) translations
+  include the current plugin name.
+
 = 3.22 =
 * Fix: changing a cart quantity could fail with a fatal error when the theme sent
   the key of an item that was no longer in the cart (e.g. WoodMart's mini-cart from
@@ -276,6 +282,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.23 =
+Compatibility and translations update: tested up to WooCommerce 11.1. No
+configuration changes needed.
 
 = 3.22 =
 Recommended: fixes a fatal error when changing a cart quantity from a stale
