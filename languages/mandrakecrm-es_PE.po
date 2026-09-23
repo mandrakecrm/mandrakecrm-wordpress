@@ -1,0 +1,395 @@
+# Copyright (C) 2026 MandrakeCRM
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MandrakeCRM | Marketing Automation and AI 3.11\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
+"Last-Translator: MandrakeCRM Team\n"
+"Language-Team: Español\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-01-14T02:11:58+00:00\n"
+"PO-Revision-Date: 2026-01-14 02:15+0000\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mandrakecrm\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Plugin Name of the plugin
+#: mandrakecrm.php
+msgid "MandrakeCRM | E-commerce CRM & AI Marketing Automation"
+msgstr "MandrakeCRM | CRM E-commerce e IA para Marketing"
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: mandrakecrm.php
+msgid "https://www.mandrakecrm.com"
+msgstr "https://www.mandrakecrm.com"
+
+#. Description of the plugin
+#: mandrakecrm.php
+msgid ""
+"Recover abandoned carts. Email marketing campaigns. Track campaign ROI. "
+"Connect your store in minutes. Start free 7-day trial."
+msgstr ""
+"Recupera carritos abandonados. Campañas de email marketing. Rastrea ROI. "
+"Conecta tu tienda en minutos. Prueba gratis 7 días."
+
+#. Author of the plugin
+#: mandrakecrm.php includes/class-mandrakecrm-admin.php:67
+#: includes/class-mandrakecrm-admin.php:68
+#: includes/class-mandrakecrm-admin.php:115
+#: includes/class-mandrakecrm-admin.php:301
+msgid "MandrakeCRM"
+msgstr "MandrakeCRM"
+
+#. translators: %d: number of minutes
+#: includes/class-mandrakecrm-abandoned-cart.php:148
+#, php-format
+msgid "Every %d Minutes"
+msgstr "Cada %d Minutos"
+
+#: includes/class-mandrakecrm-admin.php:116
+msgid "MandrakeCRM Dashboard & Settings"
+msgstr "Panel y Configuración de MandrakeCRM"
+
+#: includes/class-mandrakecrm-admin.php:129
+msgid "Dashboard"
+msgstr "Panel"
+
+#: includes/class-mandrakecrm-admin.php:134
+msgid "Open MandrakeCRM Dashboard"
+msgstr "Abrir Panel de MandrakeCRM"
+
+#: includes/class-mandrakecrm-admin.php:144 mandrakecrm.php:212
+msgid "Settings"
+msgstr "Configuración"
+
+#: includes/class-mandrakecrm-admin.php:147
+msgid "Plugin Settings"
+msgstr "Configuración del Plugin"
+
+#: includes/class-mandrakecrm-admin.php:223
+msgid "Connecting..."
+msgstr "Conectando..."
+
+#: includes/class-mandrakecrm-admin.php:224
+msgid "Saving..."
+msgstr "Guardando..."
+
+#: includes/class-mandrakecrm-admin.php:225
+msgid "Connected"
+msgstr "Conectado"
+
+#: includes/class-mandrakecrm-admin.php:226
+#: includes/class-mandrakecrm-admin.php:317
+msgid "Disconnected"
+msgstr "Desconectado"
+
+#: includes/class-mandrakecrm-admin.php:227
+msgid "Error"
+msgstr "Error"
+
+#: includes/class-mandrakecrm-admin.php:228
+msgid "Settings saved"
+msgstr "Configuración guardada"
+
+#: includes/class-mandrakecrm-admin.php:229
+msgid "Disconnecting..."
+msgstr "Desconectando..."
+
+#: includes/class-mandrakecrm-admin.php:230
+msgid "Integration disconnected successfully. Redirecting..."
+msgstr "Integración desconectada exitosamente. Redirigiendo..."
+
+#: includes/class-mandrakecrm-admin.php:231
+#: includes/class-mandrakecrm-admin.php:345
+msgid "Connect"
+msgstr "Conectar"
+
+#. translators: %s: store name
+#: includes/class-mandrakecrm-admin.php:232
+#: includes/class-mandrakecrm-admin.php:313
+#, php-format
+msgid "Connected to %s"
+msgstr "Conectado a %s"
+
+#: includes/class-mandrakecrm-admin.php:233
+#: includes/class-mandrakecrm-admin.php:452
+msgid "Save Changes"
+msgstr "Guardar Cambios"
+
+#: includes/class-mandrakecrm-admin.php:234
+msgid "Yes, Disconnect"
+msgstr "Sí, Desconectar"
+
+#: includes/class-mandrakecrm-admin.php:235
+msgid "Error disconnecting integration"
+msgstr "Error al desconectar integración"
+
+#: includes/class-mandrakecrm-admin.php:267
+msgid "You do not have permission to access this page."
+msgstr "No tienes permiso para acceder a esta página."
+
+#: includes/class-mandrakecrm-admin.php:291
+msgid "MandrakeCRM Plugin Header"
+msgstr "Encabezado del Plugin MandrakeCRM"
+
+#: includes/class-mandrakecrm-admin.php:294
+msgid "MandrakeCRM Logo"
+msgstr "Logo de MandrakeCRM"
+
+#: includes/class-mandrakecrm-admin.php:302
+msgid "Sell more in your e-commerce without being a marketing expert"
+msgstr "Vende más en tu e-commerce sin ser un experto en marketing"
+
+#: includes/class-mandrakecrm-admin.php:328
+msgid "Integration"
+msgstr "Integración"
+
+#: includes/class-mandrakecrm-admin.php:332
+msgid "Token"
+msgstr "Token"
+
+#: includes/class-mandrakecrm-admin.php:339
+msgid "Enter your MandrakeCRM token"
+msgstr "Ingresa tu token de MandrakeCRM"
+
+#: includes/class-mandrakecrm-admin.php:350
+msgid "Disconnect"
+msgstr "Desconectar"
+
+#. translators: %s: link to MandrakeCRM website
+#: includes/class-mandrakecrm-admin.php:358
+#, php-format
+msgid ""
+"Don't have an account yet? %s for a 7-day free trial and start selling more!"
+msgstr ""
+"¿Aún no tienes una cuenta? %s para una prueba gratis de 7 días y empieza a "
+"vender más!"
+
+#: includes/class-mandrakecrm-admin.php:359
+msgid "Sign up"
+msgstr "Regístrate"
+
+#. translators: %s: link to get token
+#: includes/class-mandrakecrm-admin.php:367
+#, php-format
+msgid "Already have an account? Get your token at %s"
+msgstr "¿Ya tienes una cuenta? Obtén tu token en %s"
+
+#: includes/class-mandrakecrm-admin.php:368
+msgid "Settings &rarr; Store"
+msgstr "Configuración &rarr; Tienda"
+
+#: includes/class-mandrakecrm-admin.php:383
+msgid "Features"
+msgstr "Funcionalidades"
+
+#: includes/class-mandrakecrm-admin.php:389
+msgid "Abandoned Cart Recovery"
+msgstr "Recuperación de Carritos Abandonados"
+
+#: includes/class-mandrakecrm-admin.php:390
+msgid ""
+"Automatically recover lost sales with targeted emails to customers who left "
+"items in their cart."
+msgstr ""
+"Recupera automáticamente ventas perdidas con correos dirigidos a clientes que "
+"dejaron productos en su carrito."
+
+#: includes/class-mandrakecrm-admin.php:404
+msgid "Transactional Emails"
+msgstr "Correos Transaccionales"
+
+#: includes/class-mandrakecrm-admin.php:405
+msgid ""
+"Replace default WooCommerce emails with beautiful MandrakeCRM templates: New "
+"Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, "
+"Failed, and Password Reset."
+msgstr ""
+"Reemplaza los correos predeterminados de WooCommerce con hermosas plantillas de "
+"MandrakeCRM: Nueva Cuenta, Procesando, En Espera, Completado, Nota al Cliente, "
+"Reembolsado, Cancelado, Fallido y Restablecer Contraseña."
+
+#: includes/class-mandrakecrm-admin.php:420
+msgid "Smart Lead Capture Popup"
+msgstr "Popup Inteligente de Captura de Leads"
+
+#: includes/class-mandrakecrm-admin.php:421
+msgid ""
+"Convert visitors into customers with exit-intent popups that build your "
+"email list and nurture relationships."
+msgstr ""
+"Convierte visitantes en clientes con popups de intención de salida que "
+"construyen tu lista de correos y nutren relaciones."
+
+#: includes/class-mandrakecrm-admin.php:436
+msgid "Checkout Marketing Consent"
+msgstr "Consentimiento de Marketing en el Checkout"
+
+#: includes/class-mandrakecrm-admin.php:437
+msgid ""
+"Grow your subscriber list by collecting marketing consent during checkout."
+msgstr ""
+"Haz crecer tu lista de suscriptores recopilando consentimiento de marketing "
+"durante el checkout."
+
+#: includes/class-mandrakecrm-admin.php:439
+#: includes/class-mandrakecrm-admin.php:447
+msgid "Always On"
+msgstr "Siempre Activo"
+
+#: includes/class-mandrakecrm-admin.php:444
+msgid "Marketing Attribution Tracking"
+msgstr "Seguimiento de Atribución de Marketing"
+
+#: includes/class-mandrakecrm-admin.php:445
+msgid ""
+"Track UTM parameters to measure campaign ROI and attribute sales to your "
+"MandrakeCRM campaigns."
+msgstr ""
+"Rastrea parámetros UTM para medir el ROI de campañas y atribuir ventas a tus "
+"campañas de MandrakeCRM."
+
+#: includes/class-mandrakecrm-admin.php:463
+msgid "Support & Resources"
+msgstr "Soporte y Recursos"
+
+#: includes/class-mandrakecrm-admin.php:468
+msgid "Dashboard:"
+msgstr "Panel:"
+
+#: includes/class-mandrakecrm-admin.php:472
+msgid "Website:"
+msgstr "Sitio Web:"
+
+#: includes/class-mandrakecrm-admin.php:476
+msgid "Support:"
+msgstr "Soporte:"
+
+#. translators: %1$s: year, %2$s: plugin version
+#: includes/class-mandrakecrm-admin.php:487
+#, php-format
+msgid "%1$s &bull; MandrakeCRM v%2$s"
+msgstr "%1$s &bull; MandrakeCRM v%2$s"
+
+#: includes/class-mandrakecrm-admin.php:500
+msgid "Are you sure you want to disconnect?"
+msgstr "¿Estás seguro de que quieres desconectar?"
+
+#: includes/class-mandrakecrm-admin.php:501
+msgid "Close"
+msgstr "Cerrar"
+
+#: includes/class-mandrakecrm-admin.php:509
+msgid "Warning: Disconnecting will hurt your sales"
+msgstr "Advertencia: Desconectar perjudicará tus ventas"
+
+#: includes/class-mandrakecrm-admin.php:515
+msgid "You'll lose automated emails that drive repeat purchases"
+msgstr "Perderás correos automatizados que impulsan compras recurrentes"
+
+#: includes/class-mandrakecrm-admin.php:519
+msgid "You'll stop capturing new leads and potential customers"
+msgstr "Dejarás de capturar nuevos leads y clientes potenciales"
+
+#: includes/class-mandrakecrm-admin.php:523
+msgid "You'll lose visibility into what's actually working to drive sales"
+msgstr "Perderás visibilidad de lo que realmente está funcionando para impulsar ventas"
+
+#: includes/class-mandrakecrm-admin.php:528
+msgid ""
+"Without MandrakeCRM, you could be leaving money on the table every single "
+"day."
+msgstr ""
+"Sin MandrakeCRM, podrías estar perdiendo dinero todos los días."
+
+#: includes/class-mandrakecrm-admin.php:535
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: includes/class-mandrakecrm-admin.php:539
+msgid "Disconnect Anyway"
+msgstr "Desconectar De Todos Modos"
+
+#: includes/class-mandrakecrm-admin.php:559
+#: includes/class-mandrakecrm-admin.php:598
+#: includes/class-mandrakecrm-admin.php:649
+msgid "Permission denied"
+msgstr "Permiso denegado"
+
+#: includes/class-mandrakecrm-admin.php:565
+msgid "Token is required"
+msgstr "Se requiere el token"
+
+#: includes/class-mandrakecrm-admin.php:576
+msgid "Token verified successfully"
+msgstr "Token verificado exitosamente"
+
+#: includes/class-mandrakecrm-admin.php:584
+msgid "Invalid token"
+msgstr "Token inválido"
+
+#: includes/class-mandrakecrm-admin.php:626
+msgid "Failed to save settings"
+msgstr "Error al guardar la configuración"
+
+#: includes/class-mandrakecrm-admin.php:636
+msgid "Settings saved successfully"
+msgstr "Configuración guardada exitosamente"
+
+#: includes/class-mandrakecrm-admin.php:666
+msgid "Integration disconnected successfully"
+msgstr "Integración desconectada exitosamente"
+
+#: includes/class-mandrakecrm-checkout.php:74
+msgid ""
+"I would like to receive marketing emails about promotions, new products, and "
+"exclusive offers."
+msgstr ""
+"Me gustaría recibir correos de marketing sobre promociones, nuevos productos y "
+"ofertas exclusivas."
+
+#: includes/class-mandrakecrm-checkout.php:117
+msgid "Marketing Consent:"
+msgstr "Consentimiento de Marketing:"
+
+#: includes/class-mandrakecrm-checkout.php:121
+msgid "Subscribed"
+msgstr "Suscrito"
+
+#: includes/class-mandrakecrm-checkout.php:125
+msgid "Not Subscribed"
+msgstr "No Suscrito"
+
+#: includes/class-mandrakecrm-utm.php:186
+msgid "MandrakeCRM UTM Tracking"
+msgstr "Seguimiento UTM de MandrakeCRM"
+
+#: includes/class-mandrakecrm-utm.php:204
+msgid "Captured"
+msgstr "Capturado"
+
+#. translators: %s: WooCommerce plugin name
+#: mandrakecrm.php:87
+#, php-format
+msgid "%1$s requires %2$s to be installed and active."
+msgstr "%1$s requiere que %2$s esté instalado y activo."
+
+#: includes/class-mandrakecrm-admin.php:695
+msgid "MandrakeCRM API Connection Issue"
+msgstr "Problema de conexión con la API de MandrakeCRM"
+
+#. translators: %d: number of failed email attempts
+#: includes/class-mandrakecrm-admin.php:700
+#, php-format
+msgid "We detected %d failed attempts to send transactional emails via MandrakeCRM API. Your customers are receiving emails via WordPress fallback, but this may indicate a connection issue."
+msgstr "Detectamos %d intentos fallidos de envío de emails transaccionales vía API de MandrakeCRM. Tus clientes están recibiendo emails mediante el sistema de respaldo de WordPress, pero esto puede indicar un problema de conexión."
+
+#. translators: %s: support email address
+#: includes/class-mandrakecrm-admin.php:708
+#, php-format
+msgid "Please verify your internet connection and MandrakeCRM token. If the issue persists, contact support at %s"
+msgstr "Por favor verifica tu conexión a internet y el token de MandrakeCRM. Si el problema persiste, contacta a soporte en %s"
