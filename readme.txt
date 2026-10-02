@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.23
+Stable tag: 3.24
 WC requires at least: 8.0
 WC tested up to: 11.1
 License: GPL v2 or later
@@ -181,6 +181,20 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.24 =
+* Performance: order emails (processing, on hold, completed, refunded, cancelled,
+  failed) are now sent in the background with Action Scheduler, the WooCommerce job
+  queue. Checkout no longer waits for the MandrakeCRM API: with card payments that
+  move the order to on hold and then processing, the customer saved up to ~15
+  seconds on the "Place order" button. Changing order statuses in bulk from the admin
+  is fast again for the same reason.
+* Fix: the same order email was requested twice when an order changed status (once
+  per WooCommerce notification and once per status change). It is now queued once.
+* The email content is unchanged and still describes the status that triggered it,
+  even if the order has moved on when it is sent. Emails go out within about a
+  minute (as soon as WP-Cron or a server cron runs the queue). To send them during
+  the request as before, use the `mandrakecrm_async_order_emails` filter.
+
 = 3.23 =
 * Tested up to WooCommerce 11.1.
 * Translations updated: the bundled .pot now matches every string in the plugin,
@@ -282,6 +296,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.24 =
+Recommended: checkout no longer waits for order emails, which are now sent in the
+background. No configuration changes needed.
 
 = 3.23 =
 Compatibility and translations update: tested up to WooCommerce 11.1. No

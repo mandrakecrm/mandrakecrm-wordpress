@@ -40,6 +40,37 @@ class MandrakeCRM_Emails {
 	);
 
 	/**
+	 * Action Scheduler hook that sends an order email in the background.
+	 *
+	 * @since 3.24
+	 * @var string
+	 */
+	const ASYNC_HOOK = 'mandrakecrm_send_order_email';
+
+	/**
+	 * Action Scheduler group for MandrakeCRM background jobs.
+	 *
+	 * @since 3.24
+	 * @var string
+	 */
+	const ASYNC_GROUP = 'mandrakecrm';
+
+	/**
+	 * Order email types that may be sent in the background.
+	 *
+	 * @since 3.24
+	 * @var array
+	 */
+	const ASYNC_ORDER_EMAIL_TYPES = array(
+		'order_processing',
+		'order_completed',
+		'order_on_hold',
+		'order_refunded',
+		'order_cancelled',
+		'order_failed',
+	);
+
+	/**
 	 * Initialize email hooks.
 	 *
 	 * Hooks into woocommerce_email action to access email class instances,
@@ -51,6 +82,10 @@ class MandrakeCRM_Emails {
 	public static function init() {
 		$enabled = get_option( 'mandrakecrm_transactional_emails', '0' ) === '1';
 		$token   = get_option( 'mandrakecrm_token', '' );
+
+		// v3.24: background sender. Registered before the early return so emails already
+		// queued are still handled (run_async_order_email() re-checks the setting).
+		add_action( self::ASYNC_HOOK, array( __CLASS__, 'run_async_order_email' ), 10, 3 );
 
 		// Do not load if feature disabled OR no valid token
 		if ( ! $enabled || empty( $token ) ) {
@@ -569,14 +604,101 @@ class MandrakeCRM_Emails {
 	/**
 	 * Send order email via MandrakeCRM.
 	 *
-	 * Core method that gathers complete order data and sends to MandrakeCRM API.
-	 * Extracts customer data, billing/shipping addresses, order items, totals, and downloads.
+	 * Since 3.24 the email is queued with Action Scheduler and sent in the background, so the
+	 * API call (several seconds) no longer runs inside the checkout or the admin request that
+	 * changed the order status. Falls back to sending right away when Action Scheduler is not
+	 * available or the 'mandrakecrm_async_order_emails' filter returns false.
 	 *
 	 * @since 2.0.0
 	 * @param int    $order_id   Order ID.
 	 * @param string $email_type Email type (order_processing, order_completed, etc).
 	 */
 	private static function send_order_email( $order_id, $email_type ) {
+		if ( self::queue_order_email( $order_id, $email_type ) ) {
+			return;
+		}
+
+		self::deliver_order_email( $order_id, $email_type );
+	}
+
+	/**
+	 * Queue an order email for background sending.
+	 *
+	 * The order status is captured now, so the email reflects the status that triggered it even
+	 * if the order moves on before the job runs (e.g. on-hold → processing a few seconds later).
+	 * Only IDs and the status are stored in the job: no personal data.
+	 *
+	 * @since 3.24
+	 * @param int    $order_id   Order ID.
+	 * @param string $email_type Email type.
+	 * @return bool True if queued (or already queued), false if it must be sent right away.
+	 */
+	private static function queue_order_email( $order_id, $email_type ) {
+		if ( ! in_array( $email_type, self::ASYNC_ORDER_EMAIL_TYPES, true ) ) {
+			return false;
+		}
+		if ( ! function_exists( 'as_enqueue_async_action' ) || ! function_exists( 'as_has_scheduled_action' ) ) {
+			return false;
+		}
+		if ( ! apply_filters( 'mandrakecrm_async_order_emails', true, $order_id, $email_type ) ) {
+			return false;
+		}
+		if ( empty( get_option( 'mandrakecrm_token', '' ) ) ) {
+			return true; // Nothing to send; same outcome as deliver_order_email() without a token.
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return true;
+		}
+
+		$args = array(
+			'order_id'   => (int) $order->get_id(),
+			'email_type' => (string) $email_type,
+			'status'     => (string) $order->get_status(),
+		);
+
+		// The same email can be triggered twice in one request (the *_notification hook and
+		// handle_status_change()). Queue it once.
+		if ( as_has_scheduled_action( self::ASYNC_HOOK, $args, self::ASYNC_GROUP ) ) {
+			return true;
+		}
+
+		$action_id = as_enqueue_async_action( self::ASYNC_HOOK, $args, self::ASYNC_GROUP );
+
+		return ! empty( $action_id );
+	}
+
+	/**
+	 * Action Scheduler callback: send a queued order email.
+	 *
+	 * @since 3.24
+	 * @param int    $order_id   Order ID.
+	 * @param string $email_type Email type.
+	 * @param string $status     Order status when the email was triggered.
+	 */
+	public static function run_async_order_email( $order_id, $email_type = '', $status = '' ) {
+		if ( get_option( 'mandrakecrm_transactional_emails', '0' ) !== '1' ) {
+			return;
+		}
+		if ( ! in_array( $email_type, self::ASYNC_ORDER_EMAIL_TYPES, true ) ) {
+			return;
+		}
+
+		self::deliver_order_email( (int) $order_id, (string) $email_type, (string) $status );
+	}
+
+	/**
+	 * Build the order email payload and send it to the MandrakeCRM API.
+	 *
+	 * Gathers customer data, billing/shipping addresses, order items, totals, and downloads.
+	 *
+	 * @since 3.24 (was the body of send_order_email() since 2.0.0)
+	 * @param int    $order_id        Order ID.
+	 * @param string $email_type      Email type (order_processing, order_completed, etc).
+	 * @param string $status_snapshot Order status when the email was triggered ('' = current).
+	 */
+	private static function deliver_order_email( $order_id, $email_type, $status_snapshot = '' ) {
 		// Verify token BEFORE processing
 		$token = get_option( 'mandrakecrm_token', '' );
 		if ( empty( $token ) ) {
@@ -702,6 +824,10 @@ class MandrakeCRM_Emails {
 			break; // Only get first shipping method
 		}
 
+		// v3.24: status that triggered the email. A queued email can run after the order has
+		// moved on (e.g. on-hold → processing), and must still describe the status it was sent for.
+		$status = '' !== $status_snapshot ? $status_snapshot : $order->get_status();
+
 		// Prepare complete payload
 		$payload = array(
 			'token'              => $token,
@@ -716,7 +842,7 @@ class MandrakeCRM_Emails {
 				'order_id'         => $order->get_id(),
 				'number'           => $order->get_order_number(),
 				'date'             => $order->get_date_created()->date( 'Y-m-d' ),
-				'status'           => $order->get_status(),
+				'status'           => $status,
 				'currency'         => $order->get_currency(),
 				'subtotal'         => $order->get_subtotal(),
 				'tax_total'        => $order->get_total_tax(),
@@ -744,8 +870,12 @@ class MandrakeCRM_Emails {
 			);
 		}
 
-	// Extract downloadable products from order
-	$downloads = self::get_order_downloads( $order );
+	// Extract downloadable products from order.
+	// v3.24: a queued email for an earlier status (e.g. on-hold) must not include download links
+	// the customer did not have at that point; WooCommerce only grants them on processing/completed.
+	$downloads = ( $status === $order->get_status() || in_array( $status, array( 'processing', 'completed' ), true ) )
+		? self::get_order_downloads( $order )
+		: array();
 
 	// Build email data
 	$email_data = array(
@@ -758,7 +888,7 @@ class MandrakeCRM_Emails {
 			'order_id'         => $order->get_id(),
 			'number'           => $order->get_order_number(),
 			'date'             => $order->get_date_created()->date( 'Y-m-d' ),
-			'status'           => $order->get_status(),
+			'status'           => $status,
 			'currency'         => $order->get_currency(),
 			'subtotal'         => $order->get_subtotal(),
 			'tax_total'        => $order->get_total_tax(),
