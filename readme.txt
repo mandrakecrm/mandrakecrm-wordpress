@@ -5,9 +5,9 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.24
+Stable tag: 3.25
 WC requires at least: 8.0
-WC tested up to: 11.1
+WC tested up to: 11.2
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -181,6 +181,30 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.25 =
+* New: WhatsApp consent at checkout. A separate checkbox, "I agree to receive offers
+  from <your store> on WhatsApp", sits next to the email one, in the classic and the
+  block checkout. MandrakeCRM records the customer's choice with the order date.
+* The checkbox is shown on every MandrakeCRM plan, so the consents are ready when you
+  send WhatsApp campaigns (Scale plan). It shows your store name in MandrakeCRM. You can
+  turn it off in WooCommerce > MandrakeCRM > "WhatsApp Checkbox at Checkout" (on by default).
+* Fix: the email checkbox now reaches MandrakeCRM, in the classic and the block checkout.
+  It only counts when the order is placed: a new customer who leaves it ticked stays
+  subscribed and one who unticks it gets no campaigns (order emails still arrive); it never
+  changes an existing subscriber or someone who unsubscribed.
+* Fix: with "Transactional Emails" on, WooCommerce 11 also sent its own new
+  account email (and, in some steps, its processing and failed order emails), so the
+  customer got two. Now only MandrakeCRM's arrives.
+* The order page in the admin shows the customer's WhatsApp choice.
+* No remote calls were added to the checkout.
+* Compatibility: the recovery token of abandoned carts and the Brazilian Market fields of
+  the order emails are now read and saved through the order object, so they also work
+  with High-Performance Order Storage (HPOS).
+* Fix: malformed coupon or checkout-field requests no longer cause a server error.
+* Abandoned carts waiting to be processed are now handled oldest first.
+* Fix: a new visit that arrives with UTM parameters now replaces the campaign data of the
+  previous visit instead of mixing both, so each order keeps where it really came from.
+
 = 3.24 =
 * Performance: order emails (processing, on hold, completed, refunded, cancelled,
   failed) are now sent in the background with Action Scheduler, the WooCommerce job
@@ -296,6 +320,11 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.25 =
+Adds a WhatsApp consent checkbox at checkout (classic and block), on by default on every
+plan, makes the email checkbox work (also in the block checkout) and stops duplicate
+new account emails with WooCommerce 11.
 
 = 3.24 =
 Recommended: checkout no longer waits for order emails, which are now sent in the

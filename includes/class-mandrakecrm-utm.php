@@ -108,7 +108,18 @@ class MandrakeCRM_UTM {
 	/**
 	 * Capture UTM parameters from URL.
 	 *
+	 * Attribution rule (last touch): a visit whose URL carries at least one UTM
+	 * parameter REPLACES the whole stored set and restarts its 30 days. Nothing
+	 * of an older visit survives, so a link with fewer parameters never inherits
+	 * the term or content of the previous campaign. Visits without UTM leave the
+	 * cookie as it is. Each order therefore records the last click with UTM in
+	 * the 30 days before the purchase; the first touch of a customer is read on
+	 * the platform side, from the customer's first order.
+	 *
 	 * @since 2.0.0
+	 * @since 3.25 A new UTM visit replaces the stored set instead of merging
+	 *               into it (an email link left the term and content of an
+	 *               earlier ad on the order).
 	 */
 	public static function capture_utm_params() {
 		if ( is_admin() ) {
@@ -128,8 +139,8 @@ class MandrakeCRM_UTM {
 		}
 
 		if ( $has_utm ) {
-			$existing_utm = self::get_utm_from_cookie();
-			$merged_utm   = array_merge( $existing_utm, $utm_data );
+			// Last touch: the new visit replaces the whole set (see the method's docblock).
+			$merged_utm = $utm_data;
 
 			$merged_utm['captured_at'] = current_time( 'mysql' );
 
@@ -168,8 +179,9 @@ class MandrakeCRM_UTM {
 	 * production store: only 70% of campaign orders were attributed.
 	 *
 	 * This script performs the same capture in the browser, writing the SAME cookie,
-	 * with the same JSON shape and the same merge semantics, so `save_utm_to_order()`
-	 * and the `_mandrakecrm_utm_*` order meta are unchanged.
+	 * with the same JSON shape and the same last-touch rule (a UTM visit replaces
+	 * the whole set), so `save_utm_to_order()` and the `_mandrakecrm_utm_*` order
+	 * meta are unchanged.
 	 *
 	 * Server-side capture is deliberately KEPT rather than replaced. Its `Set-Cookie`
 	 * header is what stops a page cache from storing a UTM landing page. Without it
@@ -178,6 +190,8 @@ class MandrakeCRM_UTM {
 	 * every later visitor someone else's campaign parameters.
 	 *
 	 * @since 3.20.0
+	 * @since 3.25 Replaces the stored set instead of merging into it, like
+	 *               capture_utm_params().
 	 */
 	public static function print_capture_script() {
 		if ( is_admin() ) {
@@ -211,10 +225,7 @@ class MandrakeCRM_UTM {
 			'for(i=0;i<c.params.length;i++){k=c.params[i];v=q.get(k);' .
 			'if(v){fresh[k]=String(v).slice(0,c.max);found=true;}}' .
 			'if(!found){return;}' .
-			'var data={},m=document.cookie.match(new RegExp("(?:^|; )"+c.name+"=([^;]*)"));' .
-			'if(m){try{var p=JSON.parse(decodeURIComponent(m[1]));' .
-			'if(p&&typeof p==="object"&&!Array.isArray(p)){data=p;}}catch(e){}}' .
-			'for(k in fresh){if(Object.prototype.hasOwnProperty.call(fresh,k)){data[k]=fresh[k];}}' .
+			'var data=fresh;' .
 			'data.captured_at=new Date(Date.now()+c.offset*1000).toISOString().slice(0,19).replace("T"," ");' .
 			'var val=encodeURIComponent(JSON.stringify(data));' .
 			'if(val.length>c.bytes){return;}' .

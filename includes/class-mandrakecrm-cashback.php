@@ -99,7 +99,7 @@ class MandrakeCRM_Cashback {
 	private static function pick_coupon_code_from_query() {
 		foreach ( self::QUERY_PARAMS as $param ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query string check.
-			if ( isset( $_GET[ $param ] ) && '' !== trim( wp_unslash( $_GET[ $param ] ) ) ) {
+			if ( isset( $_GET[ $param ] ) && is_string( $_GET[ $param ] ) && '' !== trim( wp_unslash( $_GET[ $param ] ) ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				return sanitize_text_field( wp_unslash( $_GET[ $param ] ) );
 			}

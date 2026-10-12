@@ -40,6 +40,27 @@ class MandrakeCRM_Emails {
 	);
 
 	/**
+	 * WooCommerce customer emails (WC_Email ids) whose WooCommerce copy is turned off while MandrakeCRM
+	 * sends the transactional emails (see disable_replaced_wc_email()).
+	 *
+	 * MandrakeCRM sends each of them on every transition that WooCommerce would. The refund email is not
+	 * here on purpose: MandrakeCRM does not send partial refunds, and a store that turned its refund email
+	 * off in MandrakeCRM keeps WooCommerce's, as before.
+	 *
+	 * @since 3.25
+	 * @var array
+	 */
+	const WC_EMAILS_REPLACED = array(
+		'customer_new_account',
+		'customer_processing_order',
+		'customer_on_hold_order',
+		'customer_completed_order',
+		'customer_cancelled_order',
+		'customer_failed_order',
+		'customer_note',
+	);
+
+	/**
 	 * Action Scheduler hook that sends an order email in the background.
 	 *
 	 * @since 3.24
@@ -95,6 +116,15 @@ class MandrakeCRM_Emails {
 		// Hook into woocommerce_email to disable WooCommerce emails
 		// This is called AFTER email classes are initialized
 		add_action( 'woocommerce_email', array( __CLASS__, 'disable_woocommerce_emails' ), 10, 1 );
+
+		// 3.25: removing WooCommerce's hooks is not enough on recent versions, which send some customer emails
+		// through other hooks: WooCommerce 11 sends the new account email from WC_Emails::customer_new_account(),
+		// the processing email also on on-hold/cancelled -> processing, and adds a customer "failed order" email
+		// (on by default). Turning off WooCommerce's copy of each email MandrakeCRM sends works whatever the hook,
+		// so the customer never gets two.
+		foreach ( self::WC_EMAILS_REPLACED as $wc_email_id ) {
+			add_filter( 'woocommerce_email_enabled_' . $wc_email_id, array( __CLASS__, 'disable_replaced_wc_email' ), 20 );
+		}
 
 		// Register custom email handlers on the SAME notification hooks
 		// These fire when order status changes
@@ -187,6 +217,20 @@ class MandrakeCRM_Emails {
 		remove_action( 'woocommerce_low_stock_notification', array( $email_class, 'low_stock' ) );
 		remove_action( 'woocommerce_no_stock_notification', array( $email_class, 'no_stock' ) );
 		remove_action( 'woocommerce_product_on_backorder_notification', array( $email_class, 'backorder' ) );
+	}
+
+	/**
+	 * Turn off WooCommerce's copy of an email that MandrakeCRM sends.
+	 *
+	 * Hooked to woocommerce_email_enabled_{id} (WC_EMAILS_REPLACED) only while MandrakeCRM sends the
+	 * transactional emails.
+	 *
+	 * @since 3.25
+	 * @param bool $enabled Whether WooCommerce would send it.
+	 * @return bool
+	 */
+	public static function disable_replaced_wc_email( $enabled ) {
+		return false;
 	}
 
 	/**
@@ -759,16 +803,16 @@ class MandrakeCRM_Emails {
 
 		// Extract Brazilian Market fields (shipping) - compatible with WooCommerce Brazilian Market plugin
 		$shipping_brazilian_fields = array(
-			'persontype'   => get_post_meta( $order->get_id(), '_shipping_persontype', true ),
-			'cpf'          => get_post_meta( $order->get_id(), '_shipping_cpf', true ),
-			'cnpj'         => get_post_meta( $order->get_id(), '_shipping_cnpj', true ),
-			'rg'           => get_post_meta( $order->get_id(), '_shipping_rg', true ),
-			'ie'           => get_post_meta( $order->get_id(), '_shipping_ie', true ),
-			'birthdate'    => get_post_meta( $order->get_id(), '_shipping_birthdate', true ),
-			'gender'       => get_post_meta( $order->get_id(), '_shipping_gender', true ),
-			'number'       => get_post_meta( $order->get_id(), '_shipping_number', true ),
-			'neighborhood' => get_post_meta( $order->get_id(), '_shipping_neighborhood', true ),
-			'cellphone'    => get_post_meta( $order->get_id(), '_shipping_cellphone', true ),
+			'persontype'   => $order->get_meta( '_shipping_persontype' ),
+			'cpf'          => $order->get_meta( '_shipping_cpf' ),
+			'cnpj'         => $order->get_meta( '_shipping_cnpj' ),
+			'rg'           => $order->get_meta( '_shipping_rg' ),
+			'ie'           => $order->get_meta( '_shipping_ie' ),
+			'birthdate'    => $order->get_meta( '_shipping_birthdate' ),
+			'gender'       => $order->get_meta( '_shipping_gender' ),
+			'number'       => $order->get_meta( '_shipping_number' ),
+			'neighborhood' => $order->get_meta( '_shipping_neighborhood' ),
+			'cellphone'    => $order->get_meta( '_shipping_cellphone' ),
 		);
 
 		// Only include brazilian fields if at least one has data
@@ -794,16 +838,16 @@ class MandrakeCRM_Emails {
 
 		// Extract Brazilian Market fields (billing) - compatible with WooCommerce Brazilian Market plugin
 		$billing_brazilian_fields = array(
-			'persontype'   => get_post_meta( $order->get_id(), '_billing_persontype', true ),
-			'cpf'          => get_post_meta( $order->get_id(), '_billing_cpf', true ),
-			'cnpj'         => get_post_meta( $order->get_id(), '_billing_cnpj', true ),
-			'rg'           => get_post_meta( $order->get_id(), '_billing_rg', true ),
-			'ie'           => get_post_meta( $order->get_id(), '_billing_ie', true ),
-			'birthdate'    => get_post_meta( $order->get_id(), '_billing_birthdate', true ),
-			'gender'       => get_post_meta( $order->get_id(), '_billing_gender', true ),
-			'number'       => get_post_meta( $order->get_id(), '_billing_number', true ),
-			'neighborhood' => get_post_meta( $order->get_id(), '_billing_neighborhood', true ),
-			'cellphone'    => get_post_meta( $order->get_id(), '_billing_cellphone', true ),
+			'persontype'   => $order->get_meta( '_billing_persontype' ),
+			'cpf'          => $order->get_meta( '_billing_cpf' ),
+			'cnpj'         => $order->get_meta( '_billing_cnpj' ),
+			'rg'           => $order->get_meta( '_billing_rg' ),
+			'ie'           => $order->get_meta( '_billing_ie' ),
+			'birthdate'    => $order->get_meta( '_billing_birthdate' ),
+			'gender'       => $order->get_meta( '_billing_gender' ),
+			'number'       => $order->get_meta( '_billing_number' ),
+			'neighborhood' => $order->get_meta( '_billing_neighborhood' ),
+			'cellphone'    => $order->get_meta( '_billing_cellphone' ),
 		);
 
 		// Only include brazilian fields if at least one has data

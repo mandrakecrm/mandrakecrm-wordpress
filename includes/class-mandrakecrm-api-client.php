@@ -79,6 +79,10 @@ class MandrakeCRM_API_Client {
 			);
 		}
 
+		if ( ! empty( $body['valid'] ) && class_exists( 'MandrakeCRM_Checkout' ) ) {
+			MandrakeCRM_Checkout::update_store_name( $body );
+		}
+
 		return $body;
 	}
 
@@ -120,6 +124,7 @@ class MandrakeCRM_API_Client {
 				'utm_tracking'         => true,
 				'marketing_optin'      => true,
 				'abandoned_cart'       => get_option( 'mandrakecrm_abandoned_cart', '0' ) === '1',
+				'whatsapp_optin'       => get_option( 'mandrakecrm_whatsapp_optin', '1' ) === '1',
 			),
 			'account_urls'   => array(
 				'myaccount' => $myaccount_url,
@@ -154,6 +159,10 @@ class MandrakeCRM_API_Client {
 		// CRITICAL: Validate response.success in body (not just HTTP 200)
 		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
 			return false;
+		}
+
+		if ( class_exists( 'MandrakeCRM_Checkout' ) ) {
+			MandrakeCRM_Checkout::update_store_name( $body );
 		}
 
 		return true;

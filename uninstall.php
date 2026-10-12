@@ -25,6 +25,8 @@ $options = array(
 	'mandrakecrm_widget_option',
 	'mandrakecrm_widget_token',
 	'mandrakecrm_abandoned_cart',
+	'mandrakecrm_whatsapp_optin',
+	'mandrakecrm_store_name',
 );
 
 // Delete all plugin options.
@@ -34,6 +36,7 @@ foreach ( $options as $option ) {
 
 // Clear scheduled cron events.
 wp_clear_scheduled_hook( 'mandrakecrm_daily_sync' );
+wp_clear_scheduled_hook( 'mandrakecrm_status_refresh' );
 
 // Delete any transients.
 delete_transient( 'mandrakecrm_token_verified' );

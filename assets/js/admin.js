@@ -119,7 +119,8 @@
 				nonce: mandrakecrm.nonce,
 				mandrakecrm_transactional_emails: $('input[name="mandrakecrm_transactional_emails"]').is(':checked') ? '1' : '0',
 				mandrakecrm_widget_option: $('input[name="mandrakecrm_widget_option"]').is(':checked') ? '1' : '0',
-				mandrakecrm_abandoned_cart: $('input[name="mandrakecrm_abandoned_cart"]').is(':checked') ? '1' : '0'
+				mandrakecrm_abandoned_cart: $('input[name="mandrakecrm_abandoned_cart"]').is(':checked') ? '1' : '0',
+				mandrakecrm_whatsapp_optin: $('input[name="mandrakecrm_whatsapp_optin"]').is(':checked') ? '1' : '0'
 			};
 
 			$.ajax({

@@ -3,7 +3,7 @@
  * Plugin Name: MandrakeCRM – CRM & AI Marketing Automation
  * Plugin URI: https://www.mandrakecrm.com
  * Description: Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial.
- * Version: 3.24
+ * Version: 3.25
  * Requires at least: 6.0
  * Tested up to: 7.1
  * Requires PHP: 7.4
@@ -14,7 +14,7 @@
  * Text Domain: mandrakecrm
  * Domain Path: /languages
  * WC requires at least: 8.0
- * WC tested up to: 11.1
+ * WC tested up to: 11.2
  *
  * @package    MandrakeCRM
  * @author     MandrakeCRM <hello@mandrakecrm.com>
@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin constants.
  */
-define( 'MANDRAKECRM_VERSION', '3.24' );
+define( 'MANDRAKECRM_VERSION', '3.25' );
 define( 'MANDRAKECRM_PLUGIN_FILE', __FILE__ );
 define( 'MANDRAKECRM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MANDRAKECRM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -137,8 +137,47 @@ function mandrakecrm_init() {
 
 	// Enqueue checkout styles
 	add_action( 'wp_enqueue_scripts', 'mandrakecrm_enqueue_checkout_styles' );
+
+	mandrakecrm_maybe_schedule_status_refresh();
 }
 add_action( 'plugins_loaded', 'mandrakecrm_init' );
+
+/**
+ * After an update, ask MandrakeCRM once for the account status (in the background).
+ *
+ * Since 3.25 the WhatsApp checkbox shows the store name in MandrakeCRM, a value only the API reports.
+ * Stores that update the plugin would otherwise wait for the daily sync (until then the label uses the
+ * site name); this schedules a single background sync instead. It never calls the API on the visitor's
+ * request; if that sync fails, the daily sync (or opening the settings page) updates the value later.
+ *
+ * @since 3.25
+ */
+function mandrakecrm_maybe_schedule_status_refresh() {
+	if ( false !== get_option( 'mandrakecrm_store_name', false ) ) {
+		return;
+	}
+	// Empty until the API answers; storing it also keeps this check to a single autoloaded read.
+	add_option( 'mandrakecrm_store_name', '' );
+	if ( '' === (string) get_option( 'mandrakecrm_token', '' ) ) {
+		return;
+	}
+	if ( ! wp_next_scheduled( 'mandrakecrm_status_refresh' ) ) {
+		wp_schedule_single_event( time() + 30, 'mandrakecrm_status_refresh' );
+	}
+}
+
+/**
+ * One-time background status sync (see mandrakecrm_maybe_schedule_status_refresh()).
+ *
+ * @since 3.25
+ */
+add_action( 'mandrakecrm_status_refresh', function() {
+	$token = get_option( 'mandrakecrm_token' );
+	if ( ! empty( $token ) ) {
+		require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-api-client.php';
+		MandrakeCRM_API_Client::sync_status();
+	}
+});
 
 /**
  * Enqueue checkout styles for marketing opt-in checkbox.
@@ -165,6 +204,7 @@ function mandrakecrm_activate() {
 	add_option( 'mandrakecrm_token', '' );
 	add_option( 'mandrakecrm_transactional_emails', '0' );
 	add_option( 'mandrakecrm_widget_option', '0' );
+	add_option( 'mandrakecrm_whatsapp_optin', '1' );
 
 	if ( ! wp_next_scheduled( 'mandrakecrm_daily_sync' ) ) {
 		wp_schedule_event( time(), 'daily', 'mandrakecrm_daily_sync' );
@@ -191,6 +231,7 @@ register_activation_hook( __FILE__, 'mandrakecrm_activate' );
  */
 function mandrakecrm_deactivate() {
 	wp_clear_scheduled_hook( 'mandrakecrm_daily_sync' );
+	wp_clear_scheduled_hook( 'mandrakecrm_status_refresh' );
 
 	$token = get_option( 'mandrakecrm_token' );
 	if ( ! empty( $token ) ) {

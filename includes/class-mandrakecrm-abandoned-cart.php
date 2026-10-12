@@ -795,7 +795,10 @@ class MandrakeCRM_Abandoned_Cart {
 	public static function ajax_save_field() {
 		check_ajax_referer( 'mandrakecrm_abandoned_cart', 'nonce' );
 
-		$data = isset( $_POST['data'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['data'] ) ) : array();
+		// 3.25: only the five fields the checkout script sends, and only as strings (a malformed 'data' returned HTTP 500).
+		$raw     = isset( $_POST['data'] ) && is_array( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : array();
+		$allowed = array( 'billing_email', 'billing_phone', 'billing_cellphone', 'billing_first_name', 'billing_last_name' );
+		$data    = array_map( 'sanitize_text_field', array_filter( array_intersect_key( $raw, array_flip( $allowed ) ), 'is_string' ) );
 
 		if ( empty( $data ) ) {
 			wp_send_json_error( 'No data provided' );
@@ -862,8 +865,13 @@ class MandrakeCRM_Abandoned_Cart {
 			$cart_hash      = WC()->session->get( 'mandrakecrm_abandoned_cart_hash' );
 
 			if ( $recovery_token ) {
-				// Recovery link was used! Save token to order meta.
-				update_post_meta( $order_id, '_mandrake_recovery_token', $recovery_token );
+				// Recovery link was used! Save token to order meta (through the order object: works with HPOS, 3.25).
+				if ( $order instanceof WC_Order ) {
+					$order->update_meta_data( '_mandrake_recovery_token', $recovery_token );
+					$order->save_meta_data();
+				} else {
+					update_post_meta( $order_id, '_mandrake_recovery_token', $recovery_token );
+				}
 
 				// Clear token from session after saving.
 				WC()->session->set( 'mandrake_recovery_token', null );
@@ -916,6 +924,7 @@ class MandrakeCRM_Abandoned_Cart {
 				WHERE status = 'active'
 				AND last_activity_at < %s
 				AND (email IS NOT NULL AND email != '' OR phone IS NOT NULL AND phone != '')
+				ORDER BY last_activity_at ASC
 				LIMIT 50",
 				$threshold
 			)

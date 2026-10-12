@@ -441,6 +441,23 @@ class MandrakeCRM_Admin {
 						<span class="mandrakecrm-badge mandrakecrm-badge--success"><?php esc_html_e('Always On', 'mandrakecrm' ); ?></span>
 					</div>
 
+					<div class="mandrakecrm-feature">
+						<div class="mandrakecrm-feature__info">
+							<h3><?php esc_html_e( 'WhatsApp Checkbox at Checkout', 'mandrakecrm' ); ?></h3>
+							<p><?php esc_html_e( 'Show a separate checkbox at checkout so customers can agree to receive your offers on WhatsApp. WhatsApp requires this consent before marketing messages.', 'mandrakecrm' ); ?></p>
+							<p class="mandrakecrm-field__help"><?php esc_html_e( 'Consents are collected on every plan. Sending WhatsApp campaigns requires the Scale plan.', 'mandrakecrm' ); ?></p>
+						</div>
+						<label class="mandrakecrm-toggle">
+							<input
+								type="checkbox"
+								name="mandrakecrm_whatsapp_optin"
+								value="1"
+								<?php checked( (string) get_option( MandrakeCRM_Checkout::WHATSAPP_OPTION, '1' ), '1' ); ?>
+							/>
+							<span class="mandrakecrm-toggle__slider"></span>
+						</label>
+					</div>
+
 					<div class="mandrakecrm-feature mandrakecrm-feature--readonly">
 						<div class="mandrakecrm-feature__info">
 							<h3><?php esc_html_e('Marketing Attribution Tracking', 'mandrakecrm' ); ?></h3>
@@ -616,18 +633,24 @@ class MandrakeCRM_Admin {
 		$widget_option        = isset( $_POST['mandrakecrm_widget_option'] ) ? sanitize_text_field( wp_unslash( $_POST['mandrakecrm_widget_option'] ) ) : '0';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$abandoned_cart       = isset( $_POST['mandrakecrm_abandoned_cart'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['mandrakecrm_abandoned_cart'] ) ) ? '1' : '0';
+		// 3.25: an older admin.js (cached) does not send the field: keep the stored value then.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$whatsapp_optin       = isset( $_POST['mandrakecrm_whatsapp_optin'] )
+			? ( '1' === sanitize_text_field( wp_unslash( $_POST['mandrakecrm_whatsapp_optin'] ) ) ? '1' : '0' )
+			: (string) get_option( 'mandrakecrm_whatsapp_optin', '1' );
 
 		// Save options only (token stays as-is from verification)
 		update_option( 'mandrakecrm_transactional_emails', $transactional_emails );
 		update_option( 'mandrakecrm_widget_option', $widget_option );
 		update_option( 'mandrakecrm_abandoned_cart', $abandoned_cart );
+		update_option( 'mandrakecrm_whatsapp_optin', $whatsapp_optin );
 
 		// Verify that options were saved correctly
 		$verify_transactional = get_option( 'mandrakecrm_transactional_emails' );
 		$verify_widget        = get_option( 'mandrakecrm_widget_option' );
 		$verify_abandoned_cart = get_option( 'mandrakecrm_abandoned_cart' );
 
-		if ( $verify_transactional !== $transactional_emails || $verify_widget !== $widget_option || $verify_abandoned_cart !== $abandoned_cart ) {
+		if ( $verify_transactional !== $transactional_emails || $verify_widget !== $widget_option || $verify_abandoned_cart !== $abandoned_cart || (string) get_option( 'mandrakecrm_whatsapp_optin', '1' ) !== $whatsapp_optin ) {
 			wp_send_json_error( array( 'message' => __('Failed to save settings', 'mandrakecrm' ) ) );
 			return;
 		}

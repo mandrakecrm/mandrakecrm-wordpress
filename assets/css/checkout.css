@@ -124,3 +124,9 @@ div.mandrakecrm-marketing-optin label span {
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
 }
+
+/* 3.25: the WhatsApp checkbox right after the email one reads as one group */
+.woocommerce div.mandrakecrm-marketing-optin + div.mandrakecrm-whatsapp-optin,
+div.mandrakecrm-marketing-optin + div.mandrakecrm-whatsapp-optin {
+    margin-top: -10px !important;
+}
