@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.25\n"
+"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.26\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: MandrakeCRM Team\n"
 "Language-Team: Português Portugal\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T17:12:38+00:00\n"
+"POT-Creation-Date: 2026-10-20T19:12:51+00:00\n"
 "PO-Revision-Date: 2026-09-23 08:00+0000\n"
 "Language: pt_PT\n"
 "X-Generator: WP-CLI 2.12.0\n"
@@ -36,7 +36,7 @@ msgid "MandrakeCRM"
 msgstr "MandrakeCRM"
 
 #. translators: %d: number of minutes
-#: includes/class-mandrakecrm-abandoned-cart.php:149
+#: includes/class-mandrakecrm-abandoned-cart.php:165
 #, php-format
 msgid "Every %d Minutes"
 msgstr "A Cada %d Minutos"
@@ -327,11 +327,11 @@ msgstr "Inscrito"
 msgid "Not Subscribed"
 msgstr "Não Inscrito"
 
-#: includes/class-mandrakecrm-utm.php:347
+#: includes/class-mandrakecrm-utm.php:358
 msgid "MandrakeCRM UTM Tracking"
 msgstr "Rastreamento UTM do MandrakeCRM"
 
-#: includes/class-mandrakecrm-utm.php:365
+#: includes/class-mandrakecrm-utm.php:376
 msgid "Captured"
 msgstr "Capturado"
 

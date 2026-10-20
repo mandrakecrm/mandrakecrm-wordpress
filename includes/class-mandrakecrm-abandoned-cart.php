@@ -71,6 +71,15 @@ class MandrakeCRM_Abandoned_Cart {
 	const RETENTION_RECOVERED_DAYS = 30;
 
 	/**
+	 * Seconds during which a cart that was just bought (and paid) is not tracked again
+	 * while its contents stay the same (2 hours).
+	 *
+	 * @since 3.26
+	 * @var int
+	 */
+	const PURCHASED_GUARD_SECONDS = 7200;
+
+	/**
 	 * Initialize abandoned cart hooks.
 	 *
 	 * @since 2.1.0
@@ -119,6 +128,13 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// Order completed - mark as recovered.
 		add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'on_order_completed' ), 10, 3 );
+		// 3.26: the block checkout (Store API) closes the carts too.
+		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'on_block_order_completed' ), 10, 1 );
+
+		// 3.26: the order records which cart it came from (exact link in MandrakeCRM).
+		// Both run before the order is saved (classic and FunnelKit) or on the block checkout draft order.
+		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'save_cart_hash_to_order' ), 10, 2 );
+		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( __CLASS__, 'save_cart_hash_to_block_order' ), 10, 1 );
 
 		// Recovery URL handler.
 		// Use template_redirect to run before template is loaded.
@@ -346,6 +362,9 @@ class MandrakeCRM_Abandoned_Cart {
 	 * Priority: recovered_hash > current_hash > generate_new_with_timestamp
 	 *
 	 * @since 2.1.0
+	 * @since 3.26 Logged-in customers: the hash also carries their login session and a cycle
+	 *             kept on the user, which no longer goes back to 0 when the WooCommerce session
+	 *             expires (the same cart row was reused for months). Guests keep the formula.
 	 * @return string MD5 hash.
 	 */
 	private static function generate_cart_hash() {
@@ -369,7 +388,18 @@ class MandrakeCRM_Abandoned_Cart {
 		$session_key = WC()->session ? WC()->session->get_customer_id() : '';
 		$site_url    = get_site_url();
 		$cycle       = WC()->session ? (int) WC()->session->get( 'mandrakecrm_cart_cycle', 0 ) : 0;
-		$new_hash    = md5( $session_key . ':' . $site_url . ':' . $cycle );
+		$user_id     = get_current_user_id();
+
+		if ( $user_id ) {
+			// 3.26: still deterministic (no time() or random values): the login session token is the same
+			// for parallel requests. It goes through wp_hash() (keyed with the site salt), so it never leaves the site.
+			$cycle         = max( $cycle, (int) get_user_meta( $user_id, '_mandrakecrm_cart_cycle', true ) );
+			$session_token = wp_get_session_token();
+			$login_part    = '' !== $session_token ? wp_hash( $session_token ) : '';
+			$new_hash      = md5( $session_key . ':' . $site_url . ':' . $cycle . ':' . $login_part );
+		} else {
+			$new_hash = md5( $session_key . ':' . $site_url . ':' . $cycle );
+		}
 
 		// Persist for consistency during this cycle.
 		if ( WC()->session ) {
@@ -377,6 +407,88 @@ class MandrakeCRM_Abandoned_Cart {
 		}
 
 		return $new_hash;
+	}
+
+	/**
+	 * Hash of the cart this session is buying, without generating a new one.
+	 *
+	 * Unlike generate_cart_hash(), it never creates and stores a hash: an order whose cart
+	 * was never tracked gets none.
+	 *
+	 * @since 3.26
+	 * @return string|null MD5 hash (32 hex characters) or null.
+	 */
+	private static function get_session_cart_hash() {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return null;
+		}
+
+		$hash = WC()->session->get( 'mandrakecrm_abandoned_cart_hash' );
+		if ( empty( $hash ) ) {
+			$hash = WC()->session->get( 'mandrakecrm_current_cart_hash' );
+		}
+
+		return ( is_string( $hash ) && preg_match( '/^[0-9a-f]{32}$/', $hash ) ) ? $hash : null;
+	}
+
+	/**
+	 * Start a new cart cycle: the next tracked cart gets a new hash.
+	 *
+	 * For a logged-in customer the cycle is also kept on the user, so a new WooCommerce
+	 * session does not bring an old hash back.
+	 *
+	 * @since 3.26
+	 */
+	private static function bump_cart_cycle() {
+		if ( ! WC()->session ) {
+			return;
+		}
+
+		$cycle   = (int) WC()->session->get( 'mandrakecrm_cart_cycle', 0 );
+		$user_id = get_current_user_id();
+		if ( $user_id ) {
+			$cycle = max( $cycle, (int) get_user_meta( $user_id, '_mandrakecrm_cart_cycle', true ) );
+		}
+
+		WC()->session->set( 'mandrakecrm_cart_cycle', $cycle + 1 );
+		if ( $user_id ) {
+			update_user_meta( $user_id, '_mandrakecrm_cart_cycle', $cycle + 1 );
+		}
+
+		WC()->session->__unset( 'mandrakecrm_current_cart_hash' );
+		WC()->session->__unset( 'mandrakecrm_abandoned_cart_hash' );
+	}
+
+	/**
+	 * Whether the session cart is the one just bought, its order is paid and it is still recent.
+	 *
+	 * Forgets the purchase when the cart changes or the guard time passes. An unpaid order
+	 * (pending, on-hold, failed) does not stop tracking: the cart stays an opportunity.
+	 *
+	 * @since 3.26
+	 * @return bool True when the cart must not be tracked again.
+	 */
+	private static function is_purchased_cart_paid() {
+		if ( ! WC()->session ) {
+			return false;
+		}
+
+		$purchased = WC()->session->get( 'mandrakecrm_purchased_cart' );
+		if ( ! is_array( $purchased ) ) {
+			return false;
+		}
+
+		$same  = ! empty( $purchased['sig'] ) && WC()->cart->get_cart_hash() === $purchased['sig'];
+		$fresh = ( time() - (int) ( $purchased['at'] ?? 0 ) ) < self::PURCHASED_GUARD_SECONDS;
+
+		if ( ! $same || ! $fresh ) {
+			WC()->session->__unset( 'mandrakecrm_purchased_cart' );
+			return false;
+		}
+
+		$order = wc_get_order( (int) ( $purchased['order_id'] ?? 0 ) );
+
+		return $order instanceof WC_Order && $order->is_paid();
 	}
 
 	/**
@@ -598,9 +710,15 @@ class MandrakeCRM_Abandoned_Cart {
 	 * Handler for cart update events.
 	 *
 	 * @since 2.1.0
+	 * @since 3.26 A cart that was just bought and paid is not tracked again while it stays the same.
 	 */
 	public static function on_cart_updated() {
 		if ( ! WC()->cart || WC()->cart->is_empty() ) {
+			return;
+		}
+
+		// 3.26: no "phantom" row when the cart is still full after a paid purchase (e.g. redirect gateways).
+		if ( self::is_purchased_cart_paid() ) {
 			return;
 		}
 
@@ -618,13 +736,8 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// v2.2.0: If previous cart was recovered, start NEW cycle.
 		if ( $existing && 'recovered' === $existing->status ) {
-			// Clear session hashes and increment cycle for new unique hash.
-			if ( WC()->session ) {
-				WC()->session->__unset( 'mandrakecrm_current_cart_hash' );
-				WC()->session->__unset( 'mandrakecrm_abandoned_cart_hash' );
-				$new_cycle = (int) WC()->session->get( 'mandrakecrm_cart_cycle', 0 ) + 1;
-				WC()->session->set( 'mandrakecrm_cart_cycle', $new_cycle );
-			}
+			// Clear session hashes and increment cycle for new unique hash (3.26: also on the user).
+			self::bump_cart_cycle();
 
 			// Regenerate hash (deterministic with new cycle value).
 			$cart_hash = self::generate_cart_hash();
@@ -843,9 +956,95 @@ class MandrakeCRM_Abandoned_Cart {
 	}
 
 	/**
+	 * Save the hash of the session cart on the order (`_mandrakecrm_cart_hash`).
+	 *
+	 * Runs on `woocommerce_checkout_create_order` (classic checkout and checkouts built on it),
+	 * before the order is saved, so the meta is already there when WooCommerce builds the
+	 * order webhook. Nothing is written when the cart was never tracked, and a retried payment
+	 * of the same order keeps the first hash.
+	 *
+	 * @since 3.26
+	 * @param WC_Order $order Order object.
+	 * @param array    $data  Posted checkout data (unused).
+	 * @return bool True when the meta was added to the order object.
+	 */
+	public static function save_cart_hash_to_order( $order, $data = array() ) {
+		if ( ! $order instanceof WC_Order || $order->get_meta( '_mandrakecrm_cart_hash' ) ) {
+			return false;
+		}
+
+		$cart_hash = self::get_session_cart_hash();
+		if ( ! $cart_hash ) {
+			return false;
+		}
+
+		$order->update_meta_data( '_mandrakecrm_cart_hash', $cart_hash );
+		return true;
+	}
+
+	/**
+	 * Block checkout: save the cart hash and the recovery token on the draft order.
+	 *
+	 * @since 3.26
+	 * @param WC_Order $order Order object.
+	 */
+	public static function save_cart_hash_to_block_order( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
+		$changed = self::save_cart_hash_to_order( $order );
+		$changed = self::save_recovery_token_to_order( $order ) || $changed;
+
+		if ( $changed && $order->get_id() ) {
+			$order->save_meta_data();
+		}
+	}
+
+	/**
+	 * Copy the recovery token of the session (recovery link used) to the order object.
+	 *
+	 * The token is cleared from the session in on_order_completed(), not here: on the block
+	 * checkout this runs before the order is processed.
+	 *
+	 * @since 3.26 Extracted from on_order_completed() (v2.2.2) so the block checkout saves it too.
+	 * @param WC_Order $order Order object.
+	 * @return bool True when the meta was added to the order object.
+	 */
+	private static function save_recovery_token_to_order( $order ) {
+		if ( ! WC()->session || ! $order instanceof WC_Order ) {
+			return false;
+		}
+
+		$recovery_token = WC()->session->get( 'mandrake_recovery_token' );
+		if ( ! $recovery_token || $order->get_meta( '_mandrake_recovery_token' ) === $recovery_token ) {
+			return false;
+		}
+
+		$order->update_meta_data( '_mandrake_recovery_token', $recovery_token );
+		return true;
+	}
+
+	/**
+	 * Block checkout (Store API): same as the classic checkout.
+	 *
+	 * @since 3.26
+	 * @param WC_Order $order Order object.
+	 */
+	public static function on_block_order_completed( $order ) {
+		if ( $order instanceof WC_Order ) {
+			self::on_order_completed( $order->get_id(), array(), $order );
+		}
+	}
+
+	/**
 	 * Handle order completion - mark cart as recovered.
 	 *
 	 * @since 2.1.0
+	 * @since 3.26 Also closes the other active carts of the same customer (billing email or
+	 *             user), starts a new cart cycle and remembers the bought cart so it is not
+	 *             tracked again while it stays the same and its order is paid. Idempotent: it may
+	 *             run twice for the same order.
 	 * @param int      $order_id Order ID.
 	 * @param array    $posted_data Posted checkout data.
 	 * @param WC_Order $order Order object.
@@ -853,54 +1052,104 @@ class MandrakeCRM_Abandoned_Cart {
 	public static function on_order_completed( $order_id, $posted_data, $order ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		$order_id   = (int) $order_id;
 
-		// v2.2.2: Save recovery token to order meta if from recovery link.
-		// Read directly from WC SESSION (database-backed, reliable between HTTP requests).
-		$recovery_token = null;
-		$cart_hash      = null;
-
-		if ( WC()->session ) {
-			// Get token directly from session (set in restore_cart when recovery link was used).
-			$recovery_token = WC()->session->get( 'mandrake_recovery_token' );
-			$cart_hash      = WC()->session->get( 'mandrakecrm_abandoned_cart_hash' );
-
-			if ( $recovery_token ) {
-				// Recovery link was used! Save token to order meta (through the order object: works with HPOS, 3.25).
-				if ( $order instanceof WC_Order ) {
-					$order->update_meta_data( '_mandrake_recovery_token', $recovery_token );
-					$order->save_meta_data();
-				} else {
-					update_post_meta( $order_id, '_mandrake_recovery_token', $recovery_token );
-				}
-
-				// Clear token from session after saving.
-				WC()->session->set( 'mandrake_recovery_token', null );
+		// 1. Recovery token (v2.2.2) and cart hash (3.26) on the order, through the order object (HPOS).
+		// Both are no-ops when the meta is already there (block checkout, retried payment).
+		if ( $order instanceof WC_Order ) {
+			$changed = self::save_recovery_token_to_order( $order );
+			$changed = self::save_cart_hash_to_order( $order ) || $changed;
+			if ( $changed ) {
+				$order->save_meta_data();
 			}
+		} elseif ( WC()->session && WC()->session->get( 'mandrake_recovery_token' ) ) {
+			update_post_meta( $order_id, '_mandrake_recovery_token', WC()->session->get( 'mandrake_recovery_token' ) );
 		}
 
-		// Fallback: Generate cart_hash if not from recovery.
+		if ( WC()->session && WC()->session->get( 'mandrake_recovery_token' ) ) {
+			// Clear token from session after saving.
+			WC()->session->set( 'mandrake_recovery_token', null );
+		}
+
+		// 2. Cart of this session: recovered one, or the current cycle (generated only if none, as before).
+		$cart_hash = self::get_session_cart_hash();
 		if ( empty( $cart_hash ) ) {
 			$cart_hash = self::generate_cart_hash();
 		}
 
-		// Update local record to recovered status.
-		$wpdb->update(
-			$table_name,
-			array(
-				'status'             => 'recovered',
-				'recovered_at'       => current_time( 'mysql' ),
-				'recovered_order_id' => $order_id,
-			),
-			array( 'cart_hash' => $cart_hash )
+		$now = current_time( 'mysql' );
+
+		// 3. Local record of this session to recovered (a row already recovered keeps its order).
+		$wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name only (prefix + constant).
+				"UPDATE $table_name SET status = 'recovered', recovered_at = %s, recovered_order_id = %d WHERE cart_hash = %s AND status <> 'recovered'",
+				$now,
+				$order_id,
+				$cart_hash
+			)
 		);
+
+		// 4. 3.26: other active carts of the same customer (another browser or device).
+		self::close_sibling_carts( $order, $order_id, $now );
 
 		// v2.2.0: REMOVED webhook 'recovered' - backend determines recovered/completed via woo_migrate_order()
 
-		// Clear ALL session variables for new cycle.
+		// 5. 3.26: new cycle (session and user), which also clears the session hashes.
+		self::bump_cart_cycle();
+
+		// 6. 3.26: remember the bought cart (see is_purchased_cart_paid()).
 		if ( WC()->session ) {
-			WC()->session->__unset( 'mandrakecrm_abandoned_cart_hash' );
-			WC()->session->__unset( 'mandrakecrm_current_cart_hash' );
+			WC()->session->set(
+				'mandrakecrm_purchased_cart',
+				array(
+					'sig'      => WC()->cart ? WC()->cart->get_cart_hash() : '',
+					'order_id' => $order_id,
+					'at'       => time(),
+				)
+			);
 		}
+	}
+
+	/**
+	 * Mark as recovered the active carts of the customer who just ordered.
+	 *
+	 * Same billing email (the column uses the site collation, case-insensitive) or, for a
+	 * registered customer, same user. Abandoned rows (already in MandrakeCRM) and recovered
+	 * rows are never touched; an empty email matches nothing, and neither does a guest's user 0.
+	 *
+	 * @since 3.26
+	 * @param WC_Order|mixed $order    Order object.
+	 * @param int            $order_id Order ID.
+	 * @param string         $now      Local MySQL datetime.
+	 * @return int Rows updated.
+	 */
+	private static function close_sibling_carts( $order, $order_id, $now ) {
+		if ( ! $order instanceof WC_Order ) {
+			return 0;
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		$email      = strtolower( sanitize_email( (string) $order->get_billing_email() ) );
+		$user_id    = (int) $order->get_customer_id();
+
+		if ( '' === $email && $user_id <= 0 ) {
+			return 0;
+		}
+
+		return (int) $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name only (prefix + constant).
+				"UPDATE $table_name SET status = 'recovered', recovered_at = %s, recovered_order_id = %d WHERE status = 'active' AND ( ( %s <> '' AND email = %s ) OR ( %d > 0 AND user_id = %d ) )",
+				$now,
+				(int) $order_id,
+				$email,
+				$email,
+				$user_id,
+				$user_id
+			)
+		);
 	}
 
 	/**

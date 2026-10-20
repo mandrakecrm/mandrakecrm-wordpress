@@ -3,6 +3,22 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.26
+* Abandoned carts: the order now records which cart it came from, so MandrakeCRM can
+  link the purchase to that exact cart instead of guessing by email and date.
+* Fix: a purchase now also closes the customer's other open carts (another browser or
+  device, same email or account), so nobody gets "complete your purchase" messages
+  after buying.
+* Fix: a cart that stays full after a paid purchase (some redirect payment methods) is
+  no longer tracked again as a new abandoned cart. An unpaid order (for example a
+  pending Pix or boleto) keeps the cart in the recovery flow until it is paid.
+* Fix: the block checkout now closes the cart when the order is placed and keeps the
+  recovery link on the order, like the classic checkout.
+* Logged-in customers get a new cart for each shopping session, so carts from different
+  months are no longer merged into one.
+* No new settings, texts or remote calls. Deleting the plugin also removes the cart
+  counter it keeps on each user.
+
 ## 3.25
 * New: WhatsApp consent at checkout. A separate checkbox, "I agree to receive offers
   from <your store> on WhatsApp", sits next to the email one, in the classic and the

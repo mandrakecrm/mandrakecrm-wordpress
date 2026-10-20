@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.25
+Stable tag: 3.26
 WC requires at least: 8.0
 WC tested up to: 11.2
 License: GPL v2 or later
@@ -181,6 +181,22 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 
 == Changelog ==
 
+= 3.26 =
+* Abandoned carts: the order now records which cart it came from, so MandrakeCRM can
+  link the purchase to that exact cart instead of guessing by email and date.
+* Fix: a purchase now also closes the customer's other open carts (another browser or
+  device, same email or account), so nobody gets "complete your purchase" messages
+  after buying.
+* Fix: a cart that stays full after a paid purchase (some redirect payment methods) is
+  no longer tracked again as a new abandoned cart. An unpaid order (for example a
+  pending Pix or boleto) keeps the cart in the recovery flow until it is paid.
+* Fix: the block checkout now closes the cart when the order is placed and keeps the
+  recovery link on the order, like the classic checkout.
+* Logged-in customers get a new cart for each shopping session, so carts from different
+  months are no longer merged into one.
+* No new settings, texts or remote calls. Deleting the plugin also removes the cart
+  counter it keeps on each user.
+
 = 3.25 =
 * New: WhatsApp consent at checkout. A separate checkbox, "I agree to receive offers
   from <your store> on WhatsApp", sits next to the email one, in the classic and the
@@ -320,6 +336,11 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.26 =
+Abandoned carts: a purchase now closes every open cart of the customer (also in the
+block checkout) and the order records its cart, so customers who already paid stop
+getting recovery messages.
 
 = 3.25 =
 Adds a WhatsApp consent checkbox at checkout (classic and block), on by default on every

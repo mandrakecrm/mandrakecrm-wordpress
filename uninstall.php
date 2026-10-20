@@ -44,6 +44,9 @@ delete_transient( 'mandrakecrm_store_info' );
 delete_transient( 'mandrakecrm_email_failures' );
 delete_transient( 'mandrakecrm_show_api_failure_notice' );
 
+// Delete the abandoned cart cycle kept on each user (3.26).
+delete_metadata( 'user', 0, '_mandrakecrm_cart_cycle', '', true );
+
 // Delete abandoned cart table.
 global $wpdb;
 $table_name = $wpdb->prefix . 'mandrakecrm_abandoned_carts';
