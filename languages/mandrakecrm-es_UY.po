@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.26\n"
+"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.29\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: MandrakeCRM Team\n"
 "Language-Team: Español\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-20T19:12:51+00:00\n"
+"POT-Creation-Date: 2026-10-31T12:00:00+00:00\n"
 "PO-Revision-Date: 2026-09-23 08:00+0000\n"
 "Language: es_ES\n"
 "X-Generator: WP-CLI 2.12.0\n"
@@ -40,6 +40,30 @@ msgstr "MandrakeCRM"
 #, php-format
 msgid "Every %d Minutes"
 msgstr "Cada %d Minutos"
+
+#: includes/class-mandrakecrm-agent-cart.php:341
+msgid "This cart link has expired. Please ask for a new one."
+msgstr "Este enlace de carrito ha caducado. Pide uno nuevo."
+
+#: includes/class-mandrakecrm-agent-cart.php:343
+msgid "This cart link is not valid. Please ask for a new one."
+msgstr "Este enlace de carrito no es válido. Pide uno nuevo."
+
+#. translators: 1: product name, 2: quantity in stock
+#: includes/class-mandrakecrm-agent-cart.php:454
+#, php-format
+msgid "%1$s: quantity reduced to %2$d (available stock)."
+msgstr "%1$s: cantidad reducida a %2$d (stock disponible)."
+
+#: includes/class-mandrakecrm-agent-cart.php:482
+msgid "A product"
+msgstr "Un producto"
+
+#. translators: %s: product name
+#: includes/class-mandrakecrm-agent-cart.php:486
+#, php-format
+msgid "%s is not available and was not added to your cart."
+msgstr "%s no está disponible y no se añadió a tu carrito."
 
 #: includes/class-mandrakecrm-admin.php:117
 msgid "MandrakeCRM Dashboard & Settings"
@@ -189,8 +213,8 @@ msgid "Transactional Emails"
 msgstr "Correos Transaccionales"
 
 #: includes/class-mandrakecrm-admin.php:407
-msgid "Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, Failed, and Password Reset."
-msgstr "Reemplaza los correos predeterminados de WooCommerce con hermosas plantillas de MandrakeCRM: Nueva Cuenta, Procesando, En Espera, Completado, Nota al Cliente, Reembolsado, Cancelado, Fallido y Restablecer Contraseña."
+msgid "Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Customer Invoice, Refunded, Cancelled, Failed, and Password Reset."
+msgstr "Reemplaza los correos predeterminados de WooCommerce con hermosas plantillas de MandrakeCRM: Nueva Cuenta, Procesando, En Espera, Completado, Nota al Cliente, Factura, Reembolsado, Cancelado, Fallido y Restablecer Contraseña."
 
 #: includes/class-mandrakecrm-admin.php:422
 msgid "Smart Lead Capture Widgets"

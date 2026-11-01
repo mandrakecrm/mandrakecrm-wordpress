@@ -47,7 +47,16 @@ class MandrakeCRM_Emails {
 	 * here on purpose: MandrakeCRM does not send partial refunds, and a store that turned its refund email
 	 * off in MandrakeCRM keeps WooCommerce's, as before.
 	 *
+	 * Off in MandrakeCRM = WooCommerce's default email goes out (3.27): when MandrakeCRM does not send one
+	 * of the order emails or the customer note (turned off in MandrakeCRM, or the API failed), the
+	 * WooCommerce email that was turned off here is sent instead. See after_api_send().
+	 *
+	 * customer_invoice (3.27, "Order details" sent by hand from the order screen) is listed for
+	 * completeness: WooCommerce sends it without checking whether it is enabled, so its copy is held back
+	 * through the recipient instead (see before_resend_order_email()).
+	 *
 	 * @since 3.25
+	 * @since 3.27 customer_invoice.
 	 * @var array
 	 */
 	const WC_EMAILS_REPLACED = array(
@@ -58,7 +67,65 @@ class MandrakeCRM_Emails {
 		'customer_cancelled_order',
 		'customer_failed_order',
 		'customer_note',
+		'customer_invoice',
 	);
+
+	/**
+	 * MandrakeCRM email type => WooCommerce email (WC_Email id) it stands in for.
+	 *
+	 * Used to send WooCommerce's default email when MandrakeCRM does not send one (3.27).
+	 *
+	 * @since 3.27
+	 * @var array
+	 */
+	const WC_EMAIL_IDS = array(
+		'order_processing' => 'customer_processing_order',
+		'order_completed'  => 'customer_completed_order',
+		'order_on_hold'    => 'customer_on_hold_order',
+		'order_refunded'   => 'customer_refunded_order',
+		'order_cancelled'  => 'customer_cancelled_order',
+		'order_failed'     => 'customer_failed_order',
+		'customer_note'    => 'customer_note',
+		'order_invoice'    => 'customer_invoice',
+	);
+
+	/**
+	 * API error codes that are the merchant's choice (the email is off or not set up in MandrakeCRM),
+	 * not a connection problem: they do not count for the "API Connection Issue" notice.
+	 *
+	 * @since 3.27
+	 * @var array
+	 */
+	const NOT_CONNECTION_FAILURES = array(
+		'CONFIG_DISABLED',
+		'CONFIG_NOT_FOUND',
+	);
+
+	/**
+	 * How long the plugin remembers that WooCommerce wanted to send an email it turned off (seconds).
+	 *
+	 * Covers a background job that runs late (Action Scheduler on a quiet site).
+	 *
+	 * @since 3.27
+	 * @var int
+	 */
+	const WC_WANTED_TTL = 86400;
+
+	/**
+	 * Source name of the WooCommerce log (WooCommerce > Status > Logs).
+	 *
+	 * @since 3.27
+	 * @var string
+	 */
+	const LOG_SOURCE = 'mandrakecrm';
+
+	/**
+	 * True while the plugin itself sends a WooCommerce default email (fallback).
+	 *
+	 * @since 3.27
+	 * @var bool
+	 */
+	private static $sending_wc_default = false;
 
 	/**
 	 * Action Scheduler hook that sends an order email in the background.
@@ -123,8 +190,12 @@ class MandrakeCRM_Emails {
 		// (on by default). Turning off WooCommerce's copy of each email MandrakeCRM sends works whatever the hook,
 		// so the customer never gets two.
 		foreach ( self::WC_EMAILS_REPLACED as $wc_email_id ) {
-			add_filter( 'woocommerce_email_enabled_' . $wc_email_id, array( __CLASS__, 'disable_replaced_wc_email' ), 20 );
+			add_filter( 'woocommerce_email_enabled_' . $wc_email_id, array( __CLASS__, 'disable_replaced_wc_email' ), 20, 3 );
 		}
+
+		// 3.27: "Order details" (customer_invoice), sent by hand from the order screen or the REST API.
+		add_action( 'woocommerce_before_resend_order_emails', array( __CLASS__, 'before_resend_order_email' ), 10, 2 );
+		add_action( 'woocommerce_after_resend_order_email', array( __CLASS__, 'after_resend_order_email' ), 10, 2 );
 
 		// Register custom email handlers on the SAME notification hooks
 		// These fire when order status changes
@@ -177,30 +248,14 @@ class MandrakeCRM_Emails {
 			remove_action( 'woocommerce_order_status_failed_to_on-hold_notification', array( $email_class->emails['WC_Email_New_Order'], 'trigger' ) );
 		}
 
-		// Disable customer "Processing Order" notifications
-		if ( isset( $email_class->emails['WC_Email_Customer_Processing_Order'] ) ) {
-			remove_action( 'woocommerce_order_status_pending_to_processing_notification', array( $email_class->emails['WC_Email_Customer_Processing_Order'], 'trigger' ) );
-		}
-
-		// Disable customer "On Hold Order" notifications
-		if ( isset( $email_class->emails['WC_Email_Customer_On_Hold_Order'] ) ) {
-			remove_action( 'woocommerce_order_status_pending_to_on-hold_notification', array( $email_class->emails['WC_Email_Customer_On_Hold_Order'], 'trigger' ) );
-			remove_action( 'woocommerce_order_status_failed_to_on-hold_notification', array( $email_class->emails['WC_Email_Customer_On_Hold_Order'], 'trigger' ) );
-		}
-
-		// Disable customer "Completed Order" notifications
-		if ( isset( $email_class->emails['WC_Email_Customer_Completed_Order'] ) ) {
-			remove_action( 'woocommerce_order_status_completed_notification', array( $email_class->emails['WC_Email_Customer_Completed_Order'], 'trigger' ) );
-		}
+		// 3.27: the customer processing, on-hold, completed and note emails are no longer unhooked here.
+		// WooCommerce still runs them and disable_replaced_wc_email() (WC_EMAILS_REPLACED) turns its copy
+		// off, which tells the plugin that WooCommerce would have sent that email: if MandrakeCRM then does
+		// not send it, WooCommerce's email goes out instead (after_api_send()).
 
 		// Disable customer "Refunded Order" notifications
 		if ( isset( $email_class->emails['WC_Email_Customer_Refunded_Order'] ) ) {
 			remove_action( 'woocommerce_order_status_refunded_notification', array( $email_class->emails['WC_Email_Customer_Refunded_Order'], 'trigger' ) );
-		}
-
-		// Disable customer "Note" notifications
-		if ( isset( $email_class->emails['WC_Email_Customer_Note'] ) ) {
-			remove_action( 'woocommerce_new_customer_note_notification', array( $email_class->emails['WC_Email_Customer_Note'], 'trigger' ) );
 		}
 
 		// Disable customer "New Account" notifications
@@ -225,11 +280,27 @@ class MandrakeCRM_Emails {
 	 * Hooked to woocommerce_email_enabled_{id} (WC_EMAILS_REPLACED) only while MandrakeCRM sends the
 	 * transactional emails.
 	 *
+	 * Since 3.27 it also remembers, for that order, that WooCommerce would have sent the email (its own
+	 * setting is on and the order went through a transition that sends it). That keeps the fallback
+	 * faithful: off in MandrakeCRM = the email WooCommerce would have sent goes out, and nothing that
+	 * WooCommerce would not have sent (e.g. its cancelled email is only for processing/on-hold orders,
+	 * not for unpaid orders cancelled by the stock timeout).
+	 *
 	 * @since 3.25
-	 * @param bool $enabled Whether WooCommerce would send it.
+	 * @since 3.27 $object and $email; remembers that WooCommerce wanted to send it.
+	 * @param bool          $enabled Whether WooCommerce would send it.
+	 * @param mixed         $object  Object the email is about (the order).
+	 * @param WC_Email|null $email   WooCommerce email.
 	 * @return bool
 	 */
-	public static function disable_replaced_wc_email( $enabled ) {
+	public static function disable_replaced_wc_email( $enabled, $object = null, $email = null ) {
+		if ( $enabled && ! self::$sending_wc_default && is_object( $email ) && isset( $email->id )
+			&& 'customer_invoice' !== $email->id && in_array( $email->id, self::WC_EMAIL_IDS, true )
+			&& is_object( $object ) && is_a( $object, 'WC_Order' ) ) {
+			$note = ( 'customer_note' === $email->id && isset( $email->customer_note ) ) ? (string) $email->customer_note : '';
+			set_transient( self::wc_wanted_key( $email->id, $object->get_id(), $note ), 1, self::WC_WANTED_TTL );
+		}
+
 		return false;
 	}
 
@@ -281,15 +352,8 @@ class MandrakeCRM_Emails {
 			// API success: Block WordPress default email to prevent duplicates
 			add_filter( 'wp_mail', array( __CLASS__, 'block_password_email' ), 1 );
 		} else {
-			// API failure: Increment failure counter
-			$failure_count = get_transient( 'mandrakecrm_email_failures' );
-			$failure_count = $failure_count ? (int) $failure_count + 1 : 1;
-			set_transient( 'mandrakecrm_email_failures', $failure_count, WEEK_IN_SECONDS );
-
-			// Show admin notice if threshold exceeded
-			if ( $failure_count >= 5 ) {
-				set_transient( 'mandrakecrm_show_api_failure_notice', true, WEEK_IN_SECONDS );
-			}
+			// API failure: Increment failure counter (admin notice from 5)
+			self::record_api_failure();
 
 			// Let WordPress send default email as fallback
 		}
@@ -532,12 +596,15 @@ class MandrakeCRM_Emails {
 		}
 
 		// Send via API
-		MandrakeCRM_API_Client::send_email(
+		$result = MandrakeCRM_API_Client::send_email_result(
 			'customer_note',
 			$customer_email,
 			$customer_name,
 			array( 'note' => $args['customer_note'] )
 		);
+
+		// 3.27: not sent by MandrakeCRM (off there, or the API failed) = WooCommerce's note email goes out.
+		self::after_api_send( $result, 'customer_note', (int) $order_id, (string) $args['customer_note'] );
 	}
 
 	/**
@@ -662,7 +729,10 @@ class MandrakeCRM_Emails {
 			return;
 		}
 
-		self::deliver_order_email( $order_id, $email_type );
+		$result = self::deliver_order_email( $order_id, $email_type );
+		if ( null !== $result ) {
+			self::after_api_send( $result, $email_type, (int) $order_id );
+		}
 	}
 
 	/**
@@ -729,7 +799,10 @@ class MandrakeCRM_Emails {
 			return;
 		}
 
-		self::deliver_order_email( (int) $order_id, (string) $email_type, (string) $status );
+		$result = self::deliver_order_email( (int) $order_id, (string) $email_type, (string) $status );
+		if ( null !== $result ) {
+			self::after_api_send( $result, (string) $email_type, (int) $order_id );
+		}
 	}
 
 	/**
@@ -738,21 +811,24 @@ class MandrakeCRM_Emails {
 	 * Gathers customer data, billing/shipping addresses, order items, totals, and downloads.
 	 *
 	 * @since 3.24 (was the body of send_order_email() since 2.0.0)
+	 * @since 3.27 Returns the API result.
 	 * @param int    $order_id        Order ID.
-	 * @param string $email_type      Email type (order_processing, order_completed, etc).
+	 * @param string $email_type      Email type (order_processing, order_completed, order_invoice, etc).
 	 * @param string $status_snapshot Order status when the email was triggered ('' = current).
+	 * @return array|null Result of MandrakeCRM_API_Client::send_email_result(), or null when nothing was
+	 *                    sent (no token or no order).
 	 */
 	private static function deliver_order_email( $order_id, $email_type, $status_snapshot = '' ) {
 		// Verify token BEFORE processing
 		$token = get_option( 'mandrakecrm_token', '' );
 		if ( empty( $token ) ) {
-			return;
+			return null;
 		}
 
 		// Get order object
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			return;
+			return null;
 		}
 
 		// Gather order items with complete product data
@@ -952,11 +1028,296 @@ class MandrakeCRM_Emails {
 	}
 
 	// Send to actual MandrakeCRM API
-	MandrakeCRM_API_Client::send_email(
+	return MandrakeCRM_API_Client::send_email_result(
 		$email_type,
 		$order->get_billing_email(),
 		trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 		$email_data
 	);
+	}
+
+	/**
+	 * "Order details" (customer_invoice) about to be sent by hand: send it through MandrakeCRM.
+	 *
+	 * Hooked to woocommerce_before_resend_order_emails, which WooCommerce fires right before
+	 * WC()->mailer()->customer_invoice( $order ) from the order screen ("Send order details to
+	 * customer", also for orders pending payment) and from the REST API
+	 * (POST /wc/v3/orders/{id}/actions/send_order_details), and closes with
+	 * woocommerce_after_resend_order_email.
+	 *
+	 * WooCommerce sends this email without checking whether it is enabled, so:
+	 * - MandrakeCRM took it (sent, or a duplicate it did not send again): WooCommerce's copy is held back
+	 *   by emptying its recipient until woocommerce_after_resend_order_email.
+	 * - MandrakeCRM did not send it (off in MandrakeCRM, or the API failed): nothing is held back and
+	 *   WooCommerce sends its own email right after this hook. Off in MandrakeCRM = WooCommerce's default
+	 *   email goes out. The plugin does not call trigger() itself here: that would send it twice.
+	 *
+	 * The API call runs in the request (not in the background): the plugin needs the answer before
+	 * WooCommerce sends its own copy. It is a manual action in the admin.
+	 *
+	 * @since 3.27
+	 * @param WC_Order|int $order         Order.
+	 * @param string       $email_to_send WooCommerce email being resent ('customer_invoice', 'new_order').
+	 */
+	public static function before_resend_order_email( $order, $email_to_send ) {
+		if ( 'customer_invoice' !== $email_to_send ) {
+			return;
+		}
+		if ( get_option( 'mandrakecrm_transactional_emails', '0' ) !== '1' ) {
+			return;
+		}
+
+		$order_id = is_object( $order ) && method_exists( $order, 'get_id' ) ? (int) $order->get_id() : (int) $order;
+		if ( $order_id <= 0 ) {
+			return;
+		}
+
+		$result = self::deliver_order_email( $order_id, 'order_invoice' );
+
+		if ( null !== $result && $result['success'] ) {
+			add_filter( 'woocommerce_email_recipient_customer_invoice', array( __CLASS__, 'hold_back_wc_email_recipient' ), 999 );
+			return;
+		}
+
+		if ( null !== $result ) {
+			self::count_failure( $result );
+			self::log(
+				'info',
+				sprintf( 'Order details for order %d not sent by MandrakeCRM (%s): WooCommerce sends its own email.', $order_id, $result['code'] )
+			);
+		}
+
+		// WooCommerce's own copy goes out, even on a version that checks whether it is enabled.
+		add_filter( 'woocommerce_email_enabled_customer_invoice', array( __CLASS__, 'force_wc_email_enabled' ), 30 );
+	}
+
+	/**
+	 * "Order details" sent: undo what before_resend_order_email() set for that one email.
+	 *
+	 * @since 3.27
+	 * @param WC_Order|int $order         Order.
+	 * @param string       $email_to_send WooCommerce email that was resent.
+	 */
+	public static function after_resend_order_email( $order, $email_to_send ) {
+		if ( 'customer_invoice' !== $email_to_send ) {
+			return;
+		}
+
+		remove_filter( 'woocommerce_email_recipient_customer_invoice', array( __CLASS__, 'hold_back_wc_email_recipient' ), 999 );
+		remove_filter( 'woocommerce_email_enabled_customer_invoice', array( __CLASS__, 'force_wc_email_enabled' ), 30 );
+	}
+
+	/**
+	 * Empty recipient: WooCommerce skips its copy of an email MandrakeCRM already sent.
+	 *
+	 * @since 3.27
+	 * @param string $recipient Recipient.
+	 * @return string
+	 */
+	public static function hold_back_wc_email_recipient( $recipient ) {
+		return '';
+	}
+
+	/**
+	 * Turn a WooCommerce email back on for the fallback (priority 30, after disable_replaced_wc_email()).
+	 *
+	 * @since 3.27
+	 * @param bool $enabled Whether WooCommerce would send it.
+	 * @return bool
+	 */
+	public static function force_wc_email_enabled( $enabled ) {
+		return true;
+	}
+
+	/**
+	 * After MandrakeCRM answered for an order email or a customer note: count the failure and, when
+	 * MandrakeCRM did not send it, send WooCommerce's default email.
+	 *
+	 * Off in MandrakeCRM = WooCommerce's default email goes out. With "Transactional Emails" on, the
+	 * plugin turns WooCommerce's copy off; if MandrakeCRM then does not send the email (the store turned
+	 * it off in MandrakeCRM, CONFIG_DISABLED / CONFIG_NOT_FOUND, or any other API error or a timeout), the
+	 * customer would get nothing. So WooCommerce's email is sent instead, but only when WooCommerce would
+	 * have sent it (see disable_replaced_wc_email()). A duplicate MandrakeCRM did not send again
+	 * (success with suppressed) is a success: nothing else goes out.
+	 *
+	 * @since 3.27
+	 * @param array  $result     Result of MandrakeCRM_API_Client::send_email_result().
+	 * @param string $email_type MandrakeCRM email type (WC_EMAIL_IDS keys).
+	 * @param int    $order_id   Order ID.
+	 * @param string $note       Customer note text (customer_note only).
+	 */
+	private static function after_api_send( array $result, $email_type, $order_id, $note = '' ) {
+		$wc_email_id = isset( self::WC_EMAIL_IDS[ $email_type ] ) ? self::WC_EMAIL_IDS[ $email_type ] : '';
+
+		// Whether WooCommerce wanted to send its copy of this email for this order. Read once.
+		$woo_wanted = false;
+		if ( '' !== $wc_email_id && $order_id > 0 ) {
+			$key        = self::wc_wanted_key( $wc_email_id, $order_id, 'customer_note' === $wc_email_id ? $note : '' );
+			$woo_wanted = (bool) get_transient( $key );
+			if ( $woo_wanted ) {
+				delete_transient( $key );
+			}
+		}
+
+		if ( ! empty( $result['success'] ) ) {
+			return;
+		}
+
+		self::count_failure( $result );
+
+		if ( '' === $wc_email_id || ! in_array( $wc_email_id, self::WC_EMAILS_REPLACED, true ) ) {
+			// e.g. the refund email: WooCommerce's copy is not turned off, so it already went out.
+			self::log(
+				'info',
+				sprintf( '%s for order %d not sent by MandrakeCRM (%s); WooCommerce sends its own copy of this email.', $email_type, $order_id, $result['code'] )
+			);
+			return;
+		}
+
+		if ( ! $woo_wanted ) {
+			self::log(
+				'info',
+				sprintf( '%s for order %d not sent by MandrakeCRM (%s); WooCommerce would not have sent %s either.', $email_type, $order_id, $result['code'], $wc_email_id )
+			);
+			return;
+		}
+
+		self::log(
+			'info',
+			sprintf( '%s for order %d not sent by MandrakeCRM (%s); sending WooCommerce\'s %s instead.', $email_type, $order_id, $result['code'], $wc_email_id )
+		);
+		self::send_wc_default_email( $wc_email_id, $order_id, $note );
+	}
+
+	/**
+	 * Send one of WooCommerce's default emails the plugin turned off (fallback).
+	 *
+	 * Takes the email from WC()->mailer()->get_emails(), turns it back on for this send only
+	 * (woocommerce_email_enabled_{id} at priority 30, after disable_replaced_wc_email() at 20) and calls
+	 * its trigger() with WooCommerce's own arguments. An email this WooCommerce version does not have
+	 * (e.g. customer_cancelled_order or customer_failed_order on older versions) is logged and skipped.
+	 *
+	 * @since 3.27
+	 * @param string $wc_email_id WC_Email id.
+	 * @param int    $order_id    Order ID.
+	 * @param string $note        Customer note text (customer_note only).
+	 * @return bool Whether trigger() was called.
+	 */
+	private static function send_wc_default_email( $wc_email_id, $order_id, $note = '' ) {
+		if ( ! function_exists( 'WC' ) || ! is_object( WC() ) || ! method_exists( WC(), 'mailer' ) ) {
+			return false;
+		}
+
+		$wc_email = null;
+		foreach ( (array) WC()->mailer()->get_emails() as $candidate ) {
+			if ( is_object( $candidate ) && isset( $candidate->id ) && $wc_email_id === $candidate->id ) {
+				$wc_email = $candidate;
+				break;
+			}
+		}
+
+		if ( ! $wc_email || ! method_exists( $wc_email, 'trigger' ) ) {
+			self::log( 'warning', sprintf( 'WooCommerce email %s not available in this WooCommerce version; order %d got no email.', $wc_email_id, $order_id ) );
+			return false;
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return false;
+		}
+
+		// Like WooCommerce before sending order emails by hand: payment instructions (e.g. bank
+		// transfer) are added to the email by the gateways, which may not be loaded in a background job.
+		if ( method_exists( WC(), 'payment_gateways' ) ) {
+			WC()->payment_gateways();
+		}
+		if ( method_exists( WC(), 'shipping' ) ) {
+			WC()->shipping();
+		}
+
+		self::$sending_wc_default = true;
+		add_filter( 'woocommerce_email_enabled_' . $wc_email_id, array( __CLASS__, 'force_wc_email_enabled' ), 30 );
+
+		try {
+			if ( 'customer_note' === $wc_email_id ) {
+				// WC_Email_Customer_Note::trigger( $args ).
+				$wc_email->trigger(
+					array(
+						'order_id'      => $order_id,
+						'customer_note' => $note,
+					)
+				);
+			} else {
+				// WC_Email_Customer_*_Order::trigger( $order_id, $order ).
+				$wc_email->trigger( $order_id, $order );
+			}
+		} catch ( Throwable $e ) {
+			self::log( 'error', sprintf( 'WooCommerce email %s for order %d failed: %s', $wc_email_id, $order_id, $e->getMessage() ) );
+		} finally {
+			remove_filter( 'woocommerce_email_enabled_' . $wc_email_id, array( __CLASS__, 'force_wc_email_enabled' ), 30 );
+			self::$sending_wc_default = false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Transient key: WooCommerce wanted to send this email for this order.
+	 *
+	 * @since 3.27
+	 * @param string $wc_email_id WC_Email id.
+	 * @param int    $order_id    Order ID.
+	 * @param string $note        Customer note text (several notes can be added to one order).
+	 * @return string
+	 */
+	private static function wc_wanted_key( $wc_email_id, $order_id, $note = '' ) {
+		return 'mandrakecrm_wcw_' . md5( $wc_email_id . '|' . (int) $order_id . '|' . $note );
+	}
+
+	/**
+	 * Count a failed send for the "MandrakeCRM API Connection Issue" notice.
+	 *
+	 * The store's own choice (email off or not set up in MandrakeCRM) is not a connection problem.
+	 *
+	 * @since 3.27
+	 * @param array $result Result of MandrakeCRM_API_Client::send_email_result().
+	 */
+	private static function count_failure( array $result ) {
+		if ( ! empty( $result['success'] ) || in_array( $result['code'], self::NOT_CONNECTION_FAILURES, true ) ) {
+			return;
+		}
+
+		self::record_api_failure();
+	}
+
+	/**
+	 * Add one to the failure counter; from 5 failures in a week the admin notice shows.
+	 *
+	 * @since 3.27 (was inline in handle_password_reset() since 2.0.0)
+	 */
+	private static function record_api_failure() {
+		$failure_count = get_transient( 'mandrakecrm_email_failures' );
+		$failure_count = $failure_count ? (int) $failure_count + 1 : 1;
+		set_transient( 'mandrakecrm_email_failures', $failure_count, WEEK_IN_SECONDS );
+
+		// Show admin notice if threshold exceeded
+		if ( $failure_count >= 5 ) {
+			set_transient( 'mandrakecrm_show_api_failure_notice', true, WEEK_IN_SECONDS );
+		}
+	}
+
+	/**
+	 * Write to the WooCommerce log (source "mandrakecrm"). Only IDs and codes: no personal data.
+	 *
+	 * @since 3.27
+	 * @param string $level   Log level (info, warning, error).
+	 * @param string $message Message.
+	 */
+	private static function log( $level, $message ) {
+		if ( ! function_exists( 'wc_get_logger' ) ) {
+			return;
+		}
+
+		wc_get_logger()->log( $level, $message, array( 'source' => self::LOG_SOURCE ) );
 	}
 }

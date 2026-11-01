@@ -3,6 +3,41 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.29
+* MandrakeCRM's sales assistant can quote shipping for a postcode with the same zones,
+  shipping classes and shipping methods as your checkout, through a new REST route
+  (POST /wp-json/mandrakecrm/v1/agent/shipping-quote). WooCommerce calculates the rates for
+  the products and the destination without creating a cart, a session or a customer, so no
+  abandoned cart is recorded. The route only answers requests signed with your store token.
+* When that route is not reachable, the assistant quotes through the WooCommerce Store API:
+  those quote carts are no longer recorded as abandoned carts, and their session lasts one
+  hour instead of 48. They are recognized by a header signed with your store token, which a
+  visitor's browser cannot create, so a real customer's cart is always tracked as before.
+* No new settings or remote calls.
+
+## 3.28
+* New: signed cart links. MandrakeCRM's sales assistant can send a customer a link that
+  fills the cart with the products you agreed on and opens the checkout. Prices, stock and
+  coupons always come from WooCommerce, never from the link; a product that cannot be
+  bought is skipped with a notice. Links are signed with your store token and expire in
+  72 hours or less; a link without a valid signature changes nothing.
+* The order records which conversation it came from (hidden order field), in the classic
+  and the block checkout.
+* No new settings or remote calls.
+
+## 3.27
+* New: "Order details" (the customer invoice you send from the order screen with "Send
+  order details to customer", also for orders pending payment) now goes out with your
+  MandrakeCRM template when "Transactional Emails" is on.
+* Fix: an order email turned off in MandrakeCRM (processing, on hold, completed, cancelled,
+  failed, customer note or order details) left the customer without any email, because
+  WooCommerce's copy was off too. Now WooCommerce sends its own email instead, exactly
+  when WooCommerce would have sent it. The same happens if MandrakeCRM cannot be reached.
+* Failed sends are now written to WooCommerce > Status > Logs (source "mandrakecrm") and
+  count for the "MandrakeCRM API Connection Issue" notice. An email you turned off in
+  MandrakeCRM does not count as a failure.
+* The refund email works as before: WooCommerce keeps sending its own.
+
 ## 3.26
 * Abandoned carts: the order now records which cart it came from, so MandrakeCRM can
   link the purchase to that exact cart instead of guessing by email and date.

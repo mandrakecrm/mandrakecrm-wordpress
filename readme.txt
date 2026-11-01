@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.26
+Stable tag: 3.29
 WC requires at least: 8.0
 WC tested up to: 11.2
 License: GPL v2 or later
@@ -154,7 +154,7 @@ No. We send from your own domain (marketing@yourstore.com) following deliverabil
 
 = Which WooCommerce emails are replaced? =
 
-9 customer emails: New Account, Order Processing, Completed, On Hold, Refunded, Cancelled, Failed, Customer Note, and Password Reset. Admin emails stay with WooCommerce.
+10 customer emails: New Account, Order Processing, Completed, On Hold, Refunded, Cancelled, Failed, Customer Note, Order Details (invoice), and Password Reset. An order email you turn off in MandrakeCRM is sent by WooCommerce instead. Admin emails stay with WooCommerce.
 
 = Does it track guest checkout carts? =
 
@@ -180,6 +180,41 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.29 =
+* MandrakeCRM's sales assistant can quote shipping for a postcode with the same zones,
+  shipping classes and shipping methods as your checkout, through a new REST route
+  (POST /wp-json/mandrakecrm/v1/agent/shipping-quote). WooCommerce calculates the rates for
+  the products and the destination without creating a cart, a session or a customer, so no
+  abandoned cart is recorded. The route only answers requests signed with your store token.
+* When that route is not reachable, the assistant quotes through the WooCommerce Store API:
+  those quote carts are no longer recorded as abandoned carts, and their session lasts one
+  hour instead of 48. They are recognized by a header signed with your store token, which a
+  visitor's browser cannot create, so a real customer's cart is always tracked as before.
+* No new settings or remote calls.
+
+= 3.28 =
+* New: signed cart links. MandrakeCRM's sales assistant can send a customer a link that
+  fills the cart with the products you agreed on and opens the checkout. Prices, stock and
+  coupons always come from WooCommerce, never from the link; a product that cannot be
+  bought is skipped with a notice. Links are signed with your store token and expire in
+  72 hours or less; a link without a valid signature changes nothing.
+* The order records which conversation it came from (hidden order field), in the classic
+  and the block checkout.
+* No new settings or remote calls.
+
+= 3.27 =
+* New: "Order details" (the customer invoice you send from the order screen with "Send
+  order details to customer", also for orders pending payment) now goes out with your
+  MandrakeCRM template when "Transactional Emails" is on.
+* Fix: an order email turned off in MandrakeCRM (processing, on hold, completed, cancelled,
+  failed, customer note or order details) left the customer without any email, because
+  WooCommerce's copy was off too. Now WooCommerce sends its own email instead, exactly
+  when WooCommerce would have sent it. The same happens if MandrakeCRM cannot be reached.
+* Failed sends are now written to WooCommerce > Status > Logs (source "mandrakecrm") and
+  count for the "MandrakeCRM API Connection Issue" notice. An email you turned off in
+  MandrakeCRM does not count as a failure.
+* The refund email works as before: WooCommerce keeps sending its own.
 
 = 3.26 =
 * Abandoned carts: the order now records which cart it came from, so MandrakeCRM can
@@ -336,6 +371,17 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.29 =
+Shipping quotes from MandrakeCRM's sales assistant, calculated by WooCommerce without a cart, and no longer counted as abandoned carts.
+
+= 3.28 =
+Signed cart links from MandrakeCRM's sales assistant: the customer opens the link and lands
+on the checkout with the agreed products, at WooCommerce prices.
+
+= 3.27 =
+Order details (customer invoice) by MandrakeCRM, and an order email turned off in
+MandrakeCRM is now sent by WooCommerce instead of not at all.
 
 = 3.26 =
 Abandoned carts: a purchase now closes every open cart of the customer (also in the

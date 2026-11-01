@@ -711,8 +711,14 @@ class MandrakeCRM_Abandoned_Cart {
 	 *
 	 * @since 2.1.0
 	 * @since 3.26 A cart that was just bought and paid is not tracked again while it stays the same.
+	 * @since 3.29 A shipping quote of MandrakeCRM's sales assistant (signed Store API session) is not tracked.
 	 */
 	public static function on_cart_updated() {
+		// 3.29: carts built only to quote shipping belong to nobody: no local row, nothing sent to MandrakeCRM.
+		if ( class_exists( 'MandrakeCRM_Agent_Quote' ) && MandrakeCRM_Agent_Quote::is_quote_session() ) {
+			return;
+		}
+
 		if ( ! WC()->cart || WC()->cart->is_empty() ) {
 			return;
 		}

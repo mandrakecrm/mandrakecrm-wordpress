@@ -404,7 +404,7 @@ class MandrakeCRM_Admin {
 					<div class="mandrakecrm-feature">
 						<div class="mandrakecrm-feature__info">
 							<h3><?php esc_html_e('Transactional Emails', 'mandrakecrm' ); ?></h3>
-							<p><?php esc_html_e('Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Refunded, Cancelled, Failed, and Password Reset.', 'mandrakecrm' ); ?></p>
+							<p><?php esc_html_e('Replace default WooCommerce emails with beautiful MandrakeCRM templates: New Account, Processing, On Hold, Completed, Customer Note, Customer Invoice, Refunded, Cancelled, Failed, and Password Reset.', 'mandrakecrm' ); ?></p>
 						</div>
 						<label class="mandrakecrm-toggle">
 							<input

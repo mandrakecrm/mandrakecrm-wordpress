@@ -3,7 +3,7 @@
  * Plugin Name: MandrakeCRM – CRM & AI Marketing Automation
  * Plugin URI: https://www.mandrakecrm.com
  * Description: Recover abandoned carts. Email marketing campaigns. Track campaign ROI. Connect your store in minutes. Start free 7-day trial.
- * Version: 3.26
+ * Version: 3.29
  * Requires at least: 6.0
  * Tested up to: 7.1
  * Requires PHP: 7.4
@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin constants.
  */
-define( 'MANDRAKECRM_VERSION', '3.26' );
+define( 'MANDRAKECRM_VERSION', '3.29' );
 define( 'MANDRAKECRM_PLUGIN_FILE', __FILE__ );
 define( 'MANDRAKECRM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MANDRAKECRM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -126,6 +126,9 @@ function mandrakecrm_init() {
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-checkout.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-abandoned-cart.php';
 	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-cashback.php';
+	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-agent-cart.php';
+	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-agent-quote.php';
+	require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-agent-shipping.php';
 
 	MandrakeCRM_Admin::init();
 	MandrakeCRM_Emails::init();
@@ -134,6 +137,9 @@ function mandrakecrm_init() {
 	MandrakeCRM_Checkout::init();
 	MandrakeCRM_Abandoned_Cart::init();
 	MandrakeCRM_Cashback::init();
+	MandrakeCRM_Agent_Cart::init();
+	MandrakeCRM_Agent_Quote::init();
+	MandrakeCRM_Agent_Shipping::init();
 
 	// Enqueue checkout styles
 	add_action( 'wp_enqueue_scripts', 'mandrakecrm_enqueue_checkout_styles' );

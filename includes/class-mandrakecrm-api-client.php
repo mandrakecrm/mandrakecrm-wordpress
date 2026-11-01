@@ -125,6 +125,9 @@ class MandrakeCRM_API_Client {
 				'marketing_optin'      => true,
 				'abandoned_cart'       => get_option( 'mandrakecrm_abandoned_cart', '0' ) === '1',
 				'whatsapp_optin'       => get_option( 'mandrakecrm_whatsapp_optin', '1' ) === '1',
+				'agent_cart'           => true, // 3.28: signed cart links (?mandrake_cart=).
+				'agent_quote'          => true, // 3.29: signed Store API quotes (X-Mandrake-Agent) are not abandoned carts.
+				'agent_shipping_quote' => true, // 3.29: signed shipping quote endpoint (POST mandrakecrm/v1/agent/shipping-quote).
 			),
 			'account_urls'   => array(
 				'myaccount' => $myaccount_url,
@@ -279,10 +282,44 @@ class MandrakeCRM_API_Client {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function send_email( $email_type, $recipient, $name, $data = array() ) {
+		$result = self::send_email_result( $email_type, $recipient, $name, $data );
+
+		return $result['success'];
+	}
+
+	/**
+	 * Send transactional email via MandrakeCRM and return what the API answered.
+	 *
+	 * Success means HTTP 200 and body.success === true; a duplicate the API did not send again
+	 * (body.suppressed) is a success too. Anything else is a failure with a code: the API's own
+	 * error code (e.g. CONFIG_DISABLED when the store turned the email off in MandrakeCRM), or
+	 * NO_TOKEN, HTTP_ERROR (WP_Error, e.g. a timeout), HTTP_<status> or INVALID_RESPONSE.
+	 *
+	 * @since 3.27
+	 * @param string $email_type Email type identifier.
+	 * @param string $recipient  Recipient email address.
+	 * @param string $name       Recipient name.
+	 * @param array  $data       Additional email data.
+	 * @return array {
+	 *     @type bool   $success    Whether MandrakeCRM took the email (sent or already sent).
+	 *     @type bool   $suppressed Whether it was a duplicate MandrakeCRM did not send again.
+	 *     @type string $code       Error code ('' on success).
+	 *     @type int    $http_code  HTTP status (0 when the request failed).
+	 * }
+	 */
+	public static function send_email_result( $email_type, $recipient, $name, $data = array() ) {
+		$result = array(
+			'success'    => false,
+			'suppressed' => false,
+			'code'       => '',
+			'http_code'  => 0,
+		);
+
 		$token = self::get_token();
 
 		if ( empty( $token ) ) {
-			return false;
+			$result['code'] = 'NO_TOKEN';
+			return $result;
 		}
 
 		$payload = array_merge(
@@ -309,22 +346,35 @@ class MandrakeCRM_API_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return false;
+			$result['code'] = 'HTTP_ERROR';
+			return $result;
 		}
 
-		$code = wp_remote_retrieve_response_code( $response );
+		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		$result['http_code'] = $code;
+
+		// The API also explains errors sent with another status (e.g. 403 ORIGIN_MISMATCH).
+		$api_code = ( is_array( $body ) && isset( $body['error']['code'] ) && is_string( $body['error']['code'] ) )
+			? $body['error']['code']
+			: '';
 
 		// Validate HTTP status code
 		if ( 200 !== $code ) {
-			return false;
+			$result['code'] = '' !== $api_code ? $api_code : 'HTTP_' . $code;
+			return $result;
 		}
 
 		// CRITICAL: Validate response.success in body (not just HTTP 200)
-		if ( empty( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
-			return false;
+		if ( empty( $body ) || ! is_array( $body ) || ! isset( $body['success'] ) || true !== $body['success'] ) {
+			$result['code'] = '' !== $api_code ? $api_code : 'INVALID_RESPONSE';
+			return $result;
 		}
 
-		return true;
+		$result['success']    = true;
+		$result['suppressed'] = ! empty( $body['suppressed'] );
+
+		return $result;
 	}
 }
