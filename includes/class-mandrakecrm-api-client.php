@@ -128,6 +128,9 @@ class MandrakeCRM_API_Client {
 				'agent_cart'           => true, // 3.28: signed cart links (?mandrake_cart=).
 				'agent_quote'          => true, // 3.29: signed Store API quotes (X-Mandrake-Agent) are not abandoned carts.
 				'agent_shipping_quote' => true, // 3.29: signed shipping quote endpoint (POST mandrakecrm/v1/agent/shipping-quote).
+				'agent_identity'       => true, // 3.30: signed identity of the logged-in customer (GET mandrakecrm/v1/agent/identity).
+				'agent_cart_add'       => true, // 3.30: signed cart links can add to the cart ("m":"add") instead of replacing it.
+				'merlin_site'          => true, // 3.30: chat reference cookie saved on the order; widget.js cached per plugin version.
 			),
 			'account_urls'   => array(
 				'myaccount' => $myaccount_url,

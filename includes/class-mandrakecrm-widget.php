@@ -51,6 +51,7 @@ class MandrakeCRM_Widget {
 	 *               internally detects its target context (product page,
 	 *               checkout page, etc.) and renders only when applicable.
 	 *               Order_bump requires running on checkout/cart.
+	 * @since 3.30   The URL carries the plugin version (?v=3.30) instead of the current time.
 	 */
 	public static function enqueue_widget_script() {
 		if ( is_admin() ) {
@@ -65,8 +66,10 @@ class MandrakeCRM_Widget {
 		}
 
 		// New URL structure: /widgets/{widget_token}/widget.js
+		// The CDN file is a small, stable loader (short cache) that points to hashed bundles, so the plugin
+		// version is enough to refresh it after an update; a new value on every page view defeated the cache.
 		$script_url = MANDRAKECRM_CDN_BASE . '/widgets/' . sanitize_text_field( $widget_token ) . '/widget.js';
-		$script_url = add_query_arg( 'v', time(), $script_url );
+		$script_url = add_query_arg( 'v', MANDRAKECRM_VERSION, $script_url );
 
 		wp_register_script(
 			'mandrakecrm-widget',

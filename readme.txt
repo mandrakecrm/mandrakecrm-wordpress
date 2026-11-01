@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.29
+Stable tag: 3.30
 WC requires at least: 8.0
 WC tested up to: 11.2
 License: GPL v2 or later
@@ -180,6 +180,20 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.30 =
+* MandrakeCRM's sales assistant can chat with your visitors on your site. When a customer
+  is logged in, the assistant can recognize them through a new REST route
+  (GET /wp-json/mandrakecrm/v1/agent/identity): it answers only to your own pages, never
+  to other sites, with the customer's id and e-mail signed with your store token and valid
+  for 15 minutes. Nothing is printed in your pages, so cached pages never carry it.
+* Signed cart links can now add the agreed products to the customer's current cart instead
+  of replacing it, and open the cart page.
+* An order placed after a chat with the assistant on your site records that conversation
+  (hidden order field). A signed cart link still takes precedence.
+* The MandrakeCRM widget script is now cached by the browser per plugin version instead of
+  being downloaded again on every page view.
+* No new settings or remote calls.
 
 = 3.29 =
 * MandrakeCRM's sales assistant can quote shipping for a postcode with the same zones,
@@ -371,6 +385,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.30 =
+MandrakeCRM's sales assistant on your site: it recognizes logged-in customers, adds to the
+cart without emptying it, and the widget script is cached per plugin version.
 
 = 3.29 =
 Shipping quotes from MandrakeCRM's sales assistant, calculated by WooCommerce without a cart, and no longer counted as abandoned carts.

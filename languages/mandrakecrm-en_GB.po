@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.29\n"
+"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.30\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-31T12:00:00+00:00\n"
+"POT-Creation-Date: 2026-11-01T17:48:15+00:00\n"
 "PO-Revision-Date: 2026-09-23 08:00+0000\n"
 "Language: en_GB\n"
 "X-Generator: WP-CLI 2.12.0\n"
@@ -41,26 +41,26 @@ msgstr "MandrakeCRM"
 msgid "Every %d Minutes"
 msgstr "Every %d Minutes"
 
-#: includes/class-mandrakecrm-agent-cart.php:341
+#: includes/class-mandrakecrm-agent-cart.php:390
 msgid "This cart link has expired. Please ask for a new one."
 msgstr "This cart link has expired. Please ask for a new one."
 
-#: includes/class-mandrakecrm-agent-cart.php:343
+#: includes/class-mandrakecrm-agent-cart.php:392
 msgid "This cart link is not valid. Please ask for a new one."
 msgstr "This cart link is not valid. Please ask for a new one."
 
 #. translators: 1: product name, 2: quantity in stock
-#: includes/class-mandrakecrm-agent-cart.php:454
+#: includes/class-mandrakecrm-agent-cart.php:514
 #, php-format
 msgid "%1$s: quantity reduced to %2$d (available stock)."
 msgstr "%1$s: quantity reduced to %2$d (available stock)."
 
-#: includes/class-mandrakecrm-agent-cart.php:482
+#: includes/class-mandrakecrm-agent-cart.php:542
 msgid "A product"
 msgstr "A product"
 
 #. translators: %s: product name
-#: includes/class-mandrakecrm-agent-cart.php:486
+#: includes/class-mandrakecrm-agent-cart.php:546
 #, php-format
 msgid "%s is not available and was not added to your cart."
 msgstr "%s is not available and was not added to your cart."
@@ -78,7 +78,7 @@ msgid "Open MandrakeCRM Dashboard"
 msgstr "Open MandrakeCRM Dashboard"
 
 #: includes/class-mandrakecrm-admin.php:145
-#: mandrakecrm.php:267
+#: mandrakecrm.php:275
 msgid "Settings"
 msgstr "Settings"
 

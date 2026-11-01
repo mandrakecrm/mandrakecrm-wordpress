@@ -3,6 +3,20 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.30
+* MandrakeCRM's sales assistant can chat with your visitors on your site. When a customer
+  is logged in, the assistant can recognize them through a new REST route
+  (GET /wp-json/mandrakecrm/v1/agent/identity): it answers only to your own pages, never
+  to other sites, with the customer's id and e-mail signed with your store token and valid
+  for 15 minutes. Nothing is printed in your pages, so cached pages never carry it.
+* Signed cart links can now add the agreed products to the customer's current cart instead
+  of replacing it, and open the cart page.
+* An order placed after a chat with the assistant on your site records that conversation
+  (hidden order field). A signed cart link still takes precedence.
+* The MandrakeCRM widget script is now cached by the browser per plugin version instead of
+  being downloaded again on every page view.
+* No new settings or remote calls.
+
 ## 3.29
 * MandrakeCRM's sales assistant can quote shipping for a postcode with the same zones,
   shipping classes and shipping methods as your checkout, through a new REST route

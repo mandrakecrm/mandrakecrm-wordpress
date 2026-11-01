@@ -8,13 +8,20 @@
  * Link format: ?mandrake_cart=<payload>.<signature>
  *
  * - payload   = base64url (no padding) of a JSON object:
- *               {"v":1,"i":[[product_id,variation_id,qty],...],"c":null|"coupon","r":"ref","e":unix_expiry}
+ *               {"v":1,"i":[[product_id,variation_id,qty],...],"c":null|"coupon","r":"ref","e":unix_expiry,"m":"replace"|"add"}
+ * - m (optional, 3.30) = "replace" (default): the cart is emptied, filled with the items and the checkout opens;
+ *               "add": the items are added to the current cart (nothing is removed) and the cart page opens.
  * - signature = base64url (no padding) of HMAC-SHA256( payload as sent in the URL, derived key )
  * - derived key = HMAC-SHA256( key = store token, message = "mandrake-agent-cart-v1" ), raw 32 bytes.
  *   In PHP: hash_hmac( 'sha256', 'mandrake-agent-cart-v1', $token, true ). The token is never used raw.
  *
  * Prices always come from WooCommerce, never from the link. Items that cannot be bought are skipped
  * with a notice. Requests without a valid signature change nothing.
+ *
+ * The order records the conversation it came from (_mandrakecrm_agent_ref) and how
+ * (_mandrakecrm_agent_touch): "link" when a signed link filled the cart in this session, or, since 3.30,
+ * "chat" when there was no link but the assistant's chat on the site left its reference in the
+ * first-party cookie mcrm_agent_ref. The signed link always wins over the cookie.
  *
  * @package    MandrakeCRM
  * @subpackage MandrakeCRM/includes
@@ -121,6 +128,38 @@ class MandrakeCRM_Agent_Cart {
 	 * @var string
 	 */
 	const ORDER_META = '_mandrakecrm_agent_ref';
+
+	/**
+	 * Order meta with how the conversation reached the order: "link" (signed cart link) or "chat" (cookie).
+	 *
+	 * @since 3.30
+	 * @var string
+	 */
+	const ORDER_META_TOUCH = '_mandrakecrm_agent_touch';
+
+	/**
+	 * First-party cookie with the reference of the assistant's chat on the site (written by the widget).
+	 *
+	 * @since 3.30
+	 * @var string
+	 */
+	const COOKIE_REF = 'mcrm_agent_ref';
+
+	/**
+	 * Link mode that empties the cart first (default).
+	 *
+	 * @since 3.30
+	 * @var string
+	 */
+	const MODE_REPLACE = 'replace';
+
+	/**
+	 * Link mode that adds to the current cart.
+	 *
+	 * @since 3.30
+	 * @var string
+	 */
+	const MODE_ADD = 'add';
 
 	/**
 	 * Initialize hooks (only when the store is connected).
@@ -302,6 +341,14 @@ class MandrakeCRM_Agent_Cart {
 			return array( 'error' => 'invalid' );
 		}
 
+		$mode = self::MODE_REPLACE;
+		if ( array_key_exists( 'm', $data ) ) {
+			if ( self::MODE_REPLACE !== $data['m'] && self::MODE_ADD !== $data['m'] ) {
+				return array( 'error' => 'invalid' );
+			}
+			$mode = $data['m'];
+		}
+
 		return array(
 			'cart' => array(
 				'items'     => $clean,
@@ -309,14 +356,16 @@ class MandrakeCRM_Agent_Cart {
 				'ref'       => $ref,
 				'expires'   => $expiry,
 				'signature' => $signature,
+				'mode'      => $mode,
 			),
 		);
 	}
 
 	/**
-	 * Build the cart from a signed link and open the checkout.
+	 * Build the cart from a signed link and open the checkout (or, in "add" mode, add to the cart and open it).
 	 *
 	 * @since 3.28
+	 * @since 3.30 "add" mode.
 	 */
 	public static function maybe_build_cart() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the HMAC signature authenticates the link.
@@ -346,19 +395,25 @@ class MandrakeCRM_Agent_Cart {
 		}
 
 		$cart = $parsed['cart'];
+		$add  = self::MODE_ADD === $cart['mode'];
+		$same = WC()->session->get( self::SESSION_SIG ) === $cart['signature'];
 
-		// The same link opened again in this session: keep the cart as the customer left it.
-		if ( WC()->session->get( self::SESSION_SIG ) === $cart['signature'] && ! WC()->cart->is_empty() ) {
+		// The same link opened again in this session: keep the cart as the customer left it
+		// (an "add" link never adds its items twice).
+		if ( $add && $same ) {
+			self::redirect( wc_get_cart_url() );
+		}
+		if ( $same && ! WC()->cart->is_empty() ) {
 			self::redirect( self::checkout_url() );
 		}
 
-		self::fill_cart( $cart );
+		self::fill_cart( $cart, ! $add );
 
 		WC()->session->set( self::SESSION_REF, $cart['ref'] );
 		WC()->session->set( self::SESSION_SIG, $cart['signature'] );
 		WC()->session->save_data();
 
-		self::redirect( WC()->cart->is_empty() ? wc_get_cart_url() : self::checkout_url() );
+		self::redirect( $add || WC()->cart->is_empty() ? wc_get_cart_url() : self::checkout_url() );
 	}
 
 	/**
@@ -373,13 +428,18 @@ class MandrakeCRM_Agent_Cart {
 	}
 
 	/**
-	 * Empty the cart and add the link's items with WooCommerce prices; apply the coupon if valid.
+	 * Add the link's items with WooCommerce prices (after emptying the cart, unless in "add" mode);
+	 * apply the coupon if valid.
 	 *
 	 * @since 3.28
-	 * @param array $cart Normalized payload from parse_link().
+	 * @since 3.30 $empty_first.
+	 * @param array $cart        Normalized payload from parse_link().
+	 * @param bool  $empty_first Whether to empty the cart first ("replace" mode).
 	 */
-	private static function fill_cart( $cart ) {
-		WC()->cart->empty_cart();
+	private static function fill_cart( $cart, $empty_first = true ) {
+		if ( $empty_first ) {
+			WC()->cart->empty_cart();
+		}
 
 		foreach ( $cart['items'] as $item ) {
 			list( $product_id, $variation_id, $qty ) = $item;
@@ -537,9 +597,27 @@ class MandrakeCRM_Agent_Cart {
 	}
 
 	/**
+	 * Conversation reference left by the assistant's chat on the site (cookie), if valid.
+	 *
+	 * @since 3.30
+	 * @return string|null
+	 */
+	private static function get_cookie_ref() {
+		if ( ! isset( $_COOKIE[ self::COOKIE_REF ] ) || ! is_string( $_COOKIE[ self::COOKIE_REF ] ) ) {
+			return null;
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated as a whole against a strict pattern (nothing is stripped).
+		$ref = wp_unslash( $_COOKIE[ self::COOKIE_REF ] );
+		return preg_match( '/^[A-Za-z0-9-]{1,64}$/', $ref ) ? $ref : null;
+	}
+
+	/**
 	 * Classic checkout (and FunnelKit): save the conversation reference on the order object.
 	 *
+	 * The reference of a signed link used in this session wins ("link"); without one, the chat cookie ("chat").
+	 *
 	 * @since 3.28
+	 * @since 3.30 Chat cookie and _mandrakecrm_agent_touch.
 	 * @param WC_Order $order Order object (not saved yet).
 	 * @param array    $data  Posted checkout data (unused).
 	 * @return bool True when the meta was added to the order object.
@@ -549,12 +627,18 @@ class MandrakeCRM_Agent_Cart {
 			return false; // A retried payment keeps the first reference.
 		}
 
-		$ref = self::get_session_ref();
+		$ref   = self::get_session_ref();
+		$touch = 'link';
+		if ( ! $ref ) {
+			$ref   = self::get_cookie_ref();
+			$touch = 'chat';
+		}
 		if ( ! $ref ) {
 			return false;
 		}
 
 		$order->update_meta_data( self::ORDER_META, $ref );
+		$order->update_meta_data( self::ORDER_META_TOUCH, $touch );
 		return true;
 	}
 
