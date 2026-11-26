@@ -722,7 +722,8 @@ class MandrakeCRM_Checkout {
 	 * @param string $post_data The checkout form, serialized.
 	 */
 	public static function remember_choice_from_review( $post_data ) {
-		if ( ! is_string( $post_data ) || '' === $post_data ) {
+		// A real form never has a NUL byte, and PHP 8.6 parse_str() (under wp_parse_str) throws a ValueError on one.
+		if ( ! is_string( $post_data ) || '' === $post_data || false !== strpos( $post_data, "\0" ) ) {
 			return;
 		}
 		$form = array();
@@ -816,7 +817,12 @@ class MandrakeCRM_Checkout {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Only decides how the box is drawn (see above).
 		if ( isset( $_POST['post_data'] ) && is_string( $_POST['post_data'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each value used is sanitized below.
-			wp_parse_str( wp_unslash( $_POST['post_data'] ), $form );
+			$post_data = wp_unslash( $_POST['post_data'] );
+			// PHP 8.6: parse_str() (under wp_parse_str) throws a ValueError on a NUL byte, which a real form never has
+			// (it only shows up once unslashed: the slashed $_POST carries it as «\0»).
+			if ( false === strpos( $post_data, "\0" ) ) {
+				wp_parse_str( $post_data, $form );
+			}
 		} elseif ( isset( $_POST['woocommerce-process-checkout-nonce'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each value used is sanitized below.
 			$form = wp_unslash( $_POST );

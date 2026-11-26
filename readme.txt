@@ -5,7 +5,7 @@ Requires at least: 6.0
 Tested up to: 7.2
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.35
+Stable tag: 3.36
 WC requires at least: 8.0
 WC tested up to: 11.3
 License: GPL v2 or later
@@ -184,6 +184,10 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.36 =
+* PHP 8.6: the classic checkout refresh no longer stops with an error when it receives a
+  malformed form, in the checkout checkboxes too (tested on PHP 8.6).
 
 = 3.35 =
 * Tested with WordPress 7.2 and WooCommerce 11.3.
@@ -476,6 +480,9 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.36 =
+PHP 8.6: the classic checkout refresh no longer stops with an error on a malformed form.
 
 = 3.35 =
 Tested with WordPress 7.2 and WooCommerce 11.3, and ready for PHP 8.6.

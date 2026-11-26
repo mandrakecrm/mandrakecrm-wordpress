@@ -3,6 +3,10 @@
 All notable changes to the MandrakeCRM WooCommerce plugin. This file is generated from the
 `== Changelog ==` section of `readme.txt`, the one published on WordPress.org.
 
+## 3.36
+* PHP 8.6: the classic checkout refresh no longer stops with an error when it receives a
+  malformed form, in the checkout checkboxes too (tested on PHP 8.6).
+
 ## 3.35
 * Tested with WordPress 7.2 and WooCommerce 11.3.
 * PHP 8.6: the classic checkout refresh no longer stops with an error when it receives a
