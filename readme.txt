@@ -2,12 +2,12 @@
 Contributors: mandrakecrm
 Tags: woocommerce, crm, email-marketing, abandoned-cart, marketing-automation
 Requires at least: 6.0
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 3.30
+Stable tag: 3.35
 WC requires at least: 8.0
-WC tested up to: 11.2
+WC tested up to: 11.3
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -168,6 +168,10 @@ Yes. Fully compatible with WooCommerce High-Performance Order Storage and modern
 
 No. Async processing on cloud servers means zero performance impact on your store.
 
+= Do MandrakeCRM coupon links work with page caching? =
+
+Yes. A page served by a cache applies the coupon through the WooCommerce Store API. For the fastest result, exclude the `mandrake_coupon` query parameter from the page cache (WP Rocket, LiteSpeed Cache, W3 Total Cache and similar plugins let you exclude query strings).
+
 = What if I need help? =
 
 Our support team is available via chat and email in English, Portuguese, and Spanish. We typically respond within 24 hours (usually much faster): support@mandrakecrm.com
@@ -180,6 +184,93 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 4. Analytics — Marketing and sales connected in real time
 
 == Changelog ==
+
+= 3.35 =
+* Tested with WordPress 7.2 and WooCommerce 11.3.
+* PHP 8.6: the classic checkout refresh no longer stops with an error when it receives a
+  malformed form while a coupon from a link is waiting.
+
+= 3.34 =
+* MandrakeCRM coupon links now apply the coupon by themselves: the link of the "coupon
+  activated" email and of the customer portal (?mandrake_coupon=) adds the coupon to the cart
+  and opens the same page without the parameter. WooCommerce still decides whether the coupon
+  is valid and shows its own message; only MandrakeCRM coupon formats are accepted.
+* A coupon that cannot be applied yet waits in the customer's session (up to 7 days, while the
+  session lasts): with an empty cart, it is applied with the first product; for a guest and a
+  coupon tied to an email, as soon as the email is entered at checkout (classic and block
+  checkout). If WooCommerce rejects it (another email, minimum spend), its message shows and
+  the coupon keeps waiting until the email or the cart's products change (not for a new
+  address, shipping or payment method). While it waits, it never replaces a coupon the
+  customer applied, and its messages never stop the checkout.
+* Classic checkout: when the coupon is applied or rejected while the customer fills in the
+  checkout, the message shows in a line of its own below the email field (read out by screen
+  readers) and the discount in the order review. The page does not move and no field is
+  marked as missing.
+* Link previews and crawlers change nothing, pages served by a cache apply the coupon through
+  the Store API, and a page that shows the coupon's message is never stored by a page cache.
+  Filter `mandrakecrm_apply_coupon_from_link` to turn it off.
+* `apply_coupon`, `coupon_code` and `cb_coupon` are no longer read from the address: the coupon
+  of a MandrakeCRM link is `mandrake_coupon`, cashback coupons included.
+* Cashback balance: a new route signs, on the store's server, who the logged-in customer is
+  (`GET mandrakecrm/v1/cashback/identity`, the account's email, valid for 5 minutes), so the
+  balance no longer needs any secret in the site's pages. Its answers, like those of the
+  assistant's identity route, also tell page caches not to store them.
+* Privacy: the suggested text now names the other providers the widget loads code from
+  (Cloudflare Turnstile in the chat, jsDelivr in the previous WhatsApp button), says what the
+  chat, the product offer at checkout and the cashback balance also send, does not call the
+  chat window's storage first-party, and gives the closing cookie of the previous sign-up
+  window its real duration (3,600 days).
+
+= 3.33 =
+* Both checkout checkboxes now read the same way: "I want to receive promotions, news and
+  exclusive offers from {your store} by email." and "... on WhatsApp." They still start
+  ticked, and the translation travels with the plugin until the language pack has it.
+* Privacy: the suggested text in Settings > Privacy > Policy Guide now lists every cookie and
+  browser storage item of the plugin and of the MandrakeCRM widget (sign-up window, WhatsApp
+  button and chat), says the widget is loaded from MandrakeCRM and sends it what visitors
+  enter, and shows in your store's language.
+* Fix: when a customer retries a declined payment and a checkbox had no answer in that order
+  (for example, you turned the WhatsApp checkbox on in between), its answer is now saved with
+  its proof, without changing the other one.
+* The checkout script no longer keeps checking for jQuery every second after the first minute.
+
+= 3.32 =
+* The email checkbox at checkout now names your store, like the WhatsApp one: "I would like
+  to receive marketing emails from {your store} about promotions, new products, and exclusive
+  offers." Both checkboxes still start ticked. The translation travels with the plugin, so
+  the text shows in your store's language even before the language pack is updated.
+* Proof of every answer: each order keeps the exact text of each checkbox, the language, the
+  store name, whether the WhatsApp box started ticked, the plugin version and the checkout
+  type (classic or blocks), so MandrakeCRM can show what each customer accepted or declined.
+* When you rename your store in MandrakeCRM, the checkout shows the new name within minutes:
+  MandrakeCRM sends a signed notice to a new REST route (POST
+  /wp-json/mandrakecrm/v1/settings), accepted only with your store token's signature. If
+  that notice cannot reach your site, the plugin asks MandrakeCRM in the background at most
+  once an hour, when a checkout page loads; it never calls MandrakeCRM while a visitor waits.
+* Fix: in the classic checkout, a checkbox the customer unticked no longer comes back ticked
+  when the checkout refreshes (a new postcode or address, another shipping method, a coupon
+  or a declined payment). Only the first time does a box start as your store set it.
+* Fix: the classic checkout also keeps the customer's choice when the whole page loads again
+  (refresh, back from the cart, a payment gateway that reloads the checkout), and it works
+  with optimizers that delay scripts (WP Rocket, LiteSpeed Cache, Autoptimize).
+* When a customer retries a declined payment and changes a checkbox, the order keeps the new
+  answer as the customer's own; the proof of the first answer stays.
+* The new account email no longer delays "Place order": it goes out in the background
+  through Action Scheduler (the WooCommerce queue), also on sites without WP-Cron.
+* Privacy: Settings > Privacy > Policy Guide now has a suggested text with the plugin's
+  cookies, what each one is for and how long it lasts.
+
+= 3.31 =
+* After an update, the plugin tells MandrakeCRM its new version once, in the background, so
+  your MandrakeCRM panel shows it at once (before, it waited for the daily sync or for you to
+  save the settings). It never slows down the update or your pages, and it retries an hour
+  later if MandrakeCRM does not answer.
+* Faster transactional emails for stores whose server is far from Brazil: every call to
+  MandrakeCRM now goes to the region where its data lives (São Paulo). Advanced: the
+  MANDRAKECRM_API_REGION constant in wp-config.php changes it.
+* If MandrakeCRM does not answer an order email in time, the plugin tries once more a minute
+  later before sending WooCommerce's email. Your customer no longer gets the same email twice
+  when the first one did go out.
 
 = 3.30 =
 * MandrakeCRM's sales assistant can chat with your visitors on your site. When a customer
@@ -385,6 +476,21 @@ Our support team is available via chat and email in English, Portuguese, and Spa
 * Initial release
 
 == Upgrade Notice ==
+
+= 3.35 =
+Tested with WordPress 7.2 and WooCommerce 11.3, and ready for PHP 8.6.
+
+= 3.34 =
+MandrakeCRM coupon links apply the coupon by themselves (only `mandrake_coupon`), the cashback balance uses an identity signed by the store, and a more accurate suggested privacy text.
+
+= 3.33 =
+Clearer checkout checkboxes ("I want to receive..."), a complete suggested privacy text with the widget's cookies and storage, and a fix for payment retries.
+
+= 3.32 =
+The email checkbox names your store, every order keeps a proof of the consent answers, a store name change in MandrakeCRM reaches the checkout within minutes, and an unticked checkbox stays unticked when the classic checkout refreshes.
+
+= 3.31 =
+Faster transactional emails, no duplicate order emails when MandrakeCRM is slow, and MandrakeCRM sees the new plugin version at once.
 
 = 3.30 =
 MandrakeCRM's sales assistant on your site: it recognizes logged-in customers, adds to the

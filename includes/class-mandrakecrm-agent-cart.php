@@ -34,6 +34,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once __DIR__ . '/class-mandrakecrm-i18n.php';
+
 /**
  * Agent Cart class.
  *
@@ -251,16 +253,17 @@ class MandrakeCRM_Agent_Cart {
 	 * Whether the request comes from a link preview or a crawler (they must not create carts).
 	 *
 	 * @since 3.28
+	 * @since 3.34 Public (the coupon link uses it too); the user agent check is is_preview_agent().
 	 * @return bool
 	 */
-	private static function is_preview_request() {
+	public static function is_preview_request() {
 		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : 'GET';
 		if ( 'GET' !== $method ) {
 			return true;
 		}
 
-		$agent   = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-		$preview = '' !== $agent && (bool) preg_match( '/facebookexternalhit|facebookcatalog|meta-externalagent|whatsapp|telegrambot|twitterbot|slackbot|discordbot|linkedinbot|skypeuripreview|pinterest|googlebot|google-inspectiontool|adsbot|bingbot|applebot|yandex|duckduckbot|embedly|iframely|preview|crawler|spider/i', $agent );
+		$agent   = self::user_agent();
+		$preview = self::is_preview_agent( $agent );
 
 		/**
 		 * Filters whether a signed cart link request is a link preview (nothing is changed for previews).
@@ -270,6 +273,27 @@ class MandrakeCRM_Agent_Cart {
 		 * @param string $agent   User agent.
 		 */
 		return (bool) apply_filters( 'mandrakecrm_agent_cart_is_preview_request', $preview, $agent );
+	}
+
+	/**
+	 * User agent of the request (empty when absent).
+	 *
+	 * @since 3.34
+	 * @return string
+	 */
+	public static function user_agent() {
+		return isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+	}
+
+	/**
+	 * Whether a user agent is a link preview or a crawler (no filter: each caller applies its own).
+	 *
+	 * @since 3.34 (was part of is_preview_request())
+	 * @param string $agent User agent.
+	 * @return bool
+	 */
+	public static function is_preview_agent( $agent ) {
+		return '' !== $agent && (bool) preg_match( '/facebookexternalhit|facebookcatalog|meta-externalagent|whatsapp|telegrambot|twitterbot|slackbot|discordbot|linkedinbot|skypeuripreview|pinterest|googlebot|google-inspectiontool|adsbot|bingbot|applebot|yandex|duckduckbot|embedly|iframely|preview|crawler|spider/i', (string) $agent );
 	}
 
 	/**
@@ -420,8 +444,9 @@ class MandrakeCRM_Agent_Cart {
 	 * Start a WooCommerce session for a new visitor (guests have none until they add something).
 	 *
 	 * @since 3.28
+	 * @since 3.34 Public (the coupon link uses it too).
 	 */
-	private static function ensure_session() {
+	public static function ensure_session() {
 		if ( method_exists( WC()->session, 'has_session' ) && ! WC()->session->has_session() && method_exists( WC()->session, 'set_customer_session_cookie' ) ) {
 			WC()->session->set_customer_session_cookie( true );
 		}
@@ -509,9 +534,10 @@ class MandrakeCRM_Agent_Cart {
 			}
 			$qty = $available;
 			wc_add_notice(
-				sprintf(
+				MandrakeCRM_I18n::format(
 					/* translators: 1: product name, 2: quantity in stock */
 					__( '%1$s: quantity reduced to %2$d (available stock).', 'mandrakecrm' ),
+					'%1$s: quantity reduced to %2$d (available stock).',
 					esc_html( $product->get_name() ),
 					$available
 				),
@@ -541,9 +567,10 @@ class MandrakeCRM_Agent_Cart {
 	private static function notice_unavailable( $product ) {
 		$name = $product ? $product->get_name() : __( 'A product', 'mandrakecrm' );
 		wc_add_notice(
-			sprintf(
+			MandrakeCRM_I18n::format(
 				/* translators: %s: product name */
 				__( '%s is not available and was not added to your cart.', 'mandrakecrm' ),
+				'%s is not available and was not added to your cart.',
 				esc_html( $name )
 			),
 			'error'

@@ -15,6 +15,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once __DIR__ . '/class-mandrakecrm-i18n.php';
+
 /**
  * Abandoned Cart class.
  *
@@ -80,6 +82,42 @@ class MandrakeCRM_Abandoned_Cart {
 	const PURCHASED_GUARD_SECONDS = 7200;
 
 	/**
+	 * Hook that sends the «cart resumed» notice to MandrakeCRM in the background (arguments: id of the cart row, Unix time
+	 * of the visit, attempt number; nothing else): an Action Scheduler action of the group NOTICE_GROUP, or a WP-Cron
+	 * event when Action Scheduler is not there. The notice is built from the row when it is sent.
+	 *
+	 * @since 3.32
+	 * @var string
+	 */
+	const NOTICE_HOOK = 'mandrakecrm_send_cart_notice';
+
+	/**
+	 * Action Scheduler group of the notice (the one of the plugin's order and new account emails).
+	 *
+	 * @since 3.32
+	 * @var string
+	 */
+	const NOTICE_GROUP = 'mandrakecrm';
+
+	/**
+	 * True while restore_cart() puts the products of a recovery link back in the cart: each add_to_cart() would report
+	 * a cart with only the products added so far.
+	 *
+	 * @since 3.32
+	 * @var bool
+	 */
+	private static $restoring = false;
+
+	/**
+	 * Seconds before each retry of a deferred notice the API did not take (no answer, 429 or 5xx): three retries, then
+	 * the notice is dropped.
+	 *
+	 * @since 3.32
+	 * @var int[]
+	 */
+	const NOTICE_RETRY_DELAYS = array( 60, 300, 900 );
+
+	/**
 	 * Initialize abandoned cart hooks.
 	 *
 	 * @since 2.1.0
@@ -87,6 +125,10 @@ class MandrakeCRM_Abandoned_Cart {
 	public static function init() {
 		// Always register cron schedule (needed for on_feature_toggle to work).
 		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_interval' ) );
+
+		// 3.32: the «cart resumed» notice is sent in the background (Action Scheduler or WP-Cron), also if the feature is
+		// turned off after queuing it.
+		add_action( self::NOTICE_HOOK, array( __CLASS__, 'send_queued_notice' ), 10, 3 );
 
 		$token = get_option( 'mandrakecrm_token', '' );
 		$enabled = get_option( 'mandrakecrm_abandoned_cart', '0' ) === '1';
@@ -160,9 +202,10 @@ class MandrakeCRM_Abandoned_Cart {
 	public static function add_cron_interval( $schedules ) {
 		$schedules['mandrakecrm_five_minutes'] = array(
 			'interval' => self::CRON_INTERVAL_MINUTES * 60,
-			'display'  => sprintf(
+			'display'  => MandrakeCRM_I18n::format(
 				/* translators: %d: number of minutes */
 				__('Every %d Minutes', 'mandrakecrm' ),
+				'Every %d Minutes',
 				self::CRON_INTERVAL_MINUTES
 			),
 		);
@@ -203,6 +246,7 @@ class MandrakeCRM_Abandoned_Cart {
 	public static function deactivate() {
 		wp_clear_scheduled_hook( 'mandrakecrm_process_abandoned_carts' );
 		wp_clear_scheduled_hook( 'mandrakecrm_cleanup_abandoned_carts' );
+		wp_unschedule_hook( self::NOTICE_HOOK ); // Every queued notice, whatever its arguments.
 	}
 
 	/**
@@ -719,6 +763,11 @@ class MandrakeCRM_Abandoned_Cart {
 			return;
 		}
 
+		// 3.32: restore_cart() reports the restored cart once, whole, after its totals.
+		if ( self::$restoring ) {
+			return;
+		}
+
 		if ( ! WC()->cart || WC()->cart->is_empty() ) {
 			return;
 		}
@@ -732,10 +781,10 @@ class MandrakeCRM_Abandoned_Cart {
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 		$cart_hash  = self::generate_cart_hash();
 
-		// Check if record exists (v2.2.0: include status for cycle detection).
+		// Check if record exists (v2.2.0: include status for cycle detection; 3.32: and its cart_hash, for the resumed notice).
 		$existing = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, recovery_token, status FROM $table_name WHERE cart_hash = %s",
+				"SELECT id, cart_hash, recovery_token, status FROM $table_name WHERE cart_hash = %s",
 				$cart_hash
 			)
 		);
@@ -784,6 +833,20 @@ class MandrakeCRM_Abandoned_Cart {
 		$name_data = self::get_customer_name();
 
 		if ( $existing ) {
+			// 3.32: an abandoned cart the customer comes back to. Only the request that turns the row from 'abandoned' to
+			// 'active' queues the «cart resumed» notice: two requests at the same time never queue it twice.
+			$resumed = 0;
+			if ( 'abandoned' === $existing->status && '' !== (string) $existing->cart_hash ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the plugin's own table (prefix + constant), an atomic change of one row; the id goes through prepare().
+				$resumed = (int) $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE $table_name SET status = 'active' WHERE id = %d AND status = 'abandoned'",
+						$existing->id
+					)
+				);
+				// phpcs:enable
+			}
+
 			// Update existing record.
 			$update_data = array(
 				'user_id'          => self::get_user_id(),
@@ -815,48 +878,11 @@ class MandrakeCRM_Abandoned_Cart {
 			);
 
 			// v2.2.0: Notify backend if cart was abandoned and now resumed.
-			if ( 'abandoned' === $existing->status ) {
-				// Prepare cart data for webhook.
-				$cart_contents_for_webhook = array();
-				foreach ( WC()->cart->get_cart() as $cart_item ) {
-					$product = $cart_item['data'];
-					if ( ! $product instanceof WC_Product ) {
-						continue;
-					}
-					$cart_contents_for_webhook[] = array(
-						'product_id'   => $cart_item['product_id'],
-						'name'         => $product->get_name(),
-						'quantity'     => $cart_item['quantity'],
-						'price'        => (float) $product->get_price(),
-						'image'        => wp_get_attachment_url( $product->get_image_id() ),
-						'variation_id' => $cart_item['variation_id'] ?? 0,
-					);
-				}
-
-				// Convert last_activity to UTC.
-				$dt = new DateTime( $now, new DateTimeZone( wp_timezone_string() ) );
-				$dt->setTimezone( new DateTimeZone( 'UTC' ) );
-
-				self::send_webhook( 'upsert', $existing->cart_hash, array(
-					'recovery_token'   => $existing->recovery_token,
-					'status'           => 'active',
-					'resumed_at'       => gmdate( 'c' ),
-					'last_activity_at' => $dt->format( 'c' ),
-					'customer'         => array(
-						'email'      => $email,
-						'phone'      => $phone,
-						'first_name' => $name_data['first_name'],
-						'last_name'  => $name_data['last_name'],
-						'is_guest'   => ! is_user_logged_in(),
-						'user_id'    => self::get_user_id(),
-					),
-					'cart'             => array(
-						'items'      => $cart_contents_for_webhook,
-						'total'      => (float) WC()->cart->get_total( 'edit' ),
-						'currency'   => get_woocommerce_currency(),
-						'item_count' => WC()->cart->get_cart_contents_count(),
-					),
-				) );
+			// 3.32: sent in the background (queue_resumed_notice()): the visitor's page (the recovery link, the cart) never
+			// waits for the API. Only the row id and the time of the visit are queued; the notice is built from the row when
+			// it is sent (resumed_notice_data(): only the cart_hash sent when the cart was reported abandoned and the time).
+			if ( 1 === $resumed ) {
+				self::queue_resumed_notice( (int) $existing->id, time() );
 			}
 		} else {
 			// Insert new record with customer data.
@@ -1169,9 +1195,9 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// Find carts with >15 min inactivity that are still active.
 		// v2.2.2 FIX: Use current_time('mysql') as base to match WordPress local timezone.
-		// NOTE: date() is used here only for formatting MySQL datetime string after timezone calculation.
+		// Wall-clock arithmetic on the site's local time (current_time('mysql')), read and written as UTC so the PHP timezone never shifts it.
 		// Timezone handling is done by current_time('mysql'). This value is only used for SQL comparison.
-		$threshold = date( 'Y-m-d H:i:s', strtotime( '-' . self::ABANDONMENT_MINUTES . ' minutes', strtotime( current_time( 'mysql' ) ) ) );
+		$threshold = gmdate( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ) . ' UTC' ) - self::ABANDONMENT_MINUTES * MINUTE_IN_SECONDS );
 
 		$abandoned_carts = $wpdb->get_results(
 			$wpdb->prepare(
@@ -1227,8 +1253,8 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// Delete active carts with no activity for > 7 days.
 		// v2.2.2 FIX: Use current_time('mysql') as base to match WordPress local timezone.
-		// NOTE: date() used only for MySQL formatting. Timezone handled by current_time('mysql').
-		$active_threshold = date( 'Y-m-d H:i:s', strtotime( '-' . self::RETENTION_ACTIVE_DAYS . ' days', strtotime( current_time( 'mysql' ) ) ) );
+		// Wall-clock arithmetic on the site's local time (current_time('mysql')), read and written as UTC so the PHP timezone never shifts it.
+		$active_threshold = gmdate( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ) . ' UTC' ) - self::RETENTION_ACTIVE_DAYS * DAY_IN_SECONDS );
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM $table_name WHERE status = 'active' AND last_activity_at < %s",
@@ -1238,8 +1264,8 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// Delete abandoned carts older than 90 days.
 		// v2.2.2 FIX: Use current_time('mysql') as base to match WordPress local timezone.
-		// NOTE: date() used only for MySQL formatting. Timezone handled by current_time('mysql').
-		$abandoned_threshold = date( 'Y-m-d H:i:s', strtotime( '-' . self::RETENTION_ABANDONED_DAYS . ' days', strtotime( current_time( 'mysql' ) ) ) );
+		// Wall-clock arithmetic on the site's local time (current_time('mysql')), read and written as UTC so the PHP timezone never shifts it.
+		$abandoned_threshold = gmdate( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ) . ' UTC' ) - self::RETENTION_ABANDONED_DAYS * DAY_IN_SECONDS );
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM $table_name WHERE status = 'abandoned' AND abandoned_at < %s",
@@ -1249,8 +1275,8 @@ class MandrakeCRM_Abandoned_Cart {
 
 		// Delete recovered carts older than 30 days.
 		// v2.2.2 FIX: Use current_time('mysql') as base to match WordPress local timezone.
-		// NOTE: date() used only for MySQL formatting. Timezone handled by current_time('mysql').
-		$recovered_threshold = date( 'Y-m-d H:i:s', strtotime( '-' . self::RETENTION_RECOVERED_DAYS . ' days', strtotime( current_time( 'mysql' ) ) ) );
+		// Wall-clock arithmetic on the site's local time (current_time('mysql')), read and written as UTC so the PHP timezone never shifts it.
+		$recovered_threshold = gmdate( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ) . ' UTC' ) - self::RETENTION_RECOVERED_DAYS * DAY_IN_SECONDS );
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM $table_name WHERE status = 'recovered' AND recovered_at < %s",
@@ -1324,18 +1350,185 @@ class MandrakeCRM_Abandoned_Cart {
 	}
 
 	/**
+	 * Queue the «cart resumed» notice: in Action Scheduler (it runs without WP-Cron too: a system cron, WP-CLI or the store's
+	 * admin), or in WP-Cron when Action Scheduler is not there or does not take it. If neither takes it, it is not sent: the
+	 * visitor's request never calls the API (the reminders of the cart go on in MandrakeCRM either way).
+	 *
+	 * Only the id of the cart row, the time of the visit and the attempt are queued: no e-mail, phone, name, token or items
+	 * wait in the database. The same notice (same cart and time of the visit) is never queued twice; a cart resumed again
+	 * while the notice of an earlier visit is still waiting or being retried gets its own notice (MandrakeCRM counts each).
+	 *
+	 * @since 3.32
+	 * @param int $cart_id    Cart row id.
+	 * @param int $resumed_at Unix time of the visit.
+	 * @param int $attempt    Attempt number of the send (1 the first time).
+	 * @param int $delay      Seconds from now.
+	 * @return bool Whether it is queued.
+	 */
+	private static function queue_resumed_notice( $cart_id, $resumed_at, $attempt = 1, $delay = 0 ) {
+		$args = array( (int) $cart_id, (int) $resumed_at, (int) $attempt );
+		if ( 1 === (int) $attempt && self::resumed_notice_waiting( (int) $cart_id, (int) $resumed_at ) ) {
+			return true;
+		}
+
+		if ( self::use_action_scheduler() ) {
+			try {
+				$action_id = ( (int) $delay > 0 )
+					? as_schedule_single_action( time() + (int) $delay, self::NOTICE_HOOK, $args, self::NOTICE_GROUP )
+					: as_enqueue_async_action( self::NOTICE_HOOK, $args, self::NOTICE_GROUP );
+			} catch ( Throwable $e ) {
+				$action_id = 0;
+			}
+			if ( ! empty( $action_id ) ) {
+				return true;
+			}
+		}
+
+		return true === wp_schedule_single_event( time() + (int) $delay, self::NOTICE_HOOK, $args );
+	}
+
+	/**
+	 * Whether the «cart resumed» notice of this visit (cart row and time of the visit) is already waiting, any attempt
+	 * (Action Scheduler or WP-Cron).
+	 *
+	 * @since 3.32
+	 * @since 3.32 Per visit: the notice of another visit of the same cart is another notice.
+	 * @param int $cart_id    Cart row id.
+	 * @param int $resumed_at Unix time of the visit.
+	 * @return bool
+	 */
+	private static function resumed_notice_waiting( $cart_id, $resumed_at ) {
+		if ( function_exists( 'as_get_scheduled_actions' ) ) {
+			$actions = as_get_scheduled_actions(
+				array(
+					'hook'     => self::NOTICE_HOOK,
+					'group'    => self::NOTICE_GROUP,
+					'status'   => 'pending',
+					'per_page' => 100,
+				)
+			);
+			foreach ( (array) $actions as $action ) {
+				$args = is_object( $action ) && method_exists( $action, 'get_args' ) ? array_values( (array) $action->get_args() ) : array();
+				if ( isset( $args[0], $args[1] ) && (int) $args[0] === (int) $cart_id && (int) $args[1] === (int) $resumed_at ) {
+					return true;
+				}
+			}
+		}
+		$crons = function_exists( '_get_cron_array' ) ? _get_cron_array() : array();
+		foreach ( is_array( $crons ) ? $crons : array() as $hooks ) {
+			foreach ( ( is_array( $hooks ) && isset( $hooks[ self::NOTICE_HOOK ] ) ) ? (array) $hooks[ self::NOTICE_HOOK ] : array() as $event ) {
+				if ( isset( $event['args'][0], $event['args'][1] ) && (int) $event['args'][0] === (int) $cart_id && (int) $event['args'][1] === (int) $resumed_at ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the background jobs of this class go to Action Scheduler (WooCommerce bundles it).
+	 *
+	 * @since 3.32
+	 * @return bool
+	 */
+	private static function use_action_scheduler() {
+		if ( ! function_exists( 'as_enqueue_async_action' ) || ! function_exists( 'as_schedule_single_action' ) ) {
+			return false;
+		}
+
+		/** This filter is documented in includes/class-mandrakecrm-emails.php */
+		return (bool) apply_filters( 'mandrakecrm_use_action_scheduler', true );
+	}
+
+	/**
+	 * The «cart resumed» notice: only what MandrakeCRM records (contract of spec 202, lot G): status 'active' and resumed_at
+	 * (ISO 8601 UTC); send_webhook() adds the token, the action and the cart_hash. No e-mail, phone, name, recovery token or
+	 * items: MandrakeCRM ignores them in this notice, so they are not sent.
+	 *
+	 * @since 3.32
+	 * @since 3.32 Only status and resumed_at.
+	 * @param int $resumed_at Unix time of the visit.
+	 * @return array Payload data (without token, action and cart_hash).
+	 */
+	private static function resumed_notice_data( $resumed_at ) {
+		return array(
+			'status'     => 'active',
+			'resumed_at' => gmdate( 'c', (int) $resumed_at ),
+		);
+	}
+
+	/**
+	 * Send a queued «cart resumed» notice, built from the cart row now (a row already deleted sends nothing). When the API
+	 * does not take it (no answer, 429, 5xx or RESUME_ERROR), schedule a retry (NOTICE_RETRY_DELAYS) and drop it after the
+	 * last one. Any other answer ends it: resumed_recorded and resumed_ignored are done, and a rejected notice
+	 * (MISSING_CART_HASH, INVALID_TOKEN…) would be rejected again.
+	 *
+	 * @since 3.32
+	 * @param int $cart_id    Cart row id.
+	 * @param int $resumed_at Unix time of the visit.
+	 * @param int $attempt    Attempt number.
+	 */
+	public static function send_queued_notice( $cart_id, $resumed_at = 0, $attempt = 1 ) {
+		if ( ! is_numeric( $cart_id ) || (int) $cart_id <= 0 || ! is_numeric( $resumed_at ) || (int) $resumed_at <= 0 ) {
+			return;
+		}
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the plugin's own table (prefix + constant), read fresh when the notice is sent; the id goes through prepare().
+		$cart = $wpdb->get_row( $wpdb->prepare( "SELECT cart_hash FROM $table_name WHERE id = %d", (int) $cart_id ) );
+		if ( ! $cart ) {
+			return;
+		}
+
+		$response = self::send_webhook( 'upsert', (string) $cart->cart_hash, self::resumed_notice_data( (int) $resumed_at ) );
+		if ( null === $response ) {
+			return; // No token, or no cart_hash: nothing was sent (as before).
+		}
+		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		if ( 0 !== $code && 429 !== $code && $code < 500 && ! self::is_retryable_answer( $response ) ) {
+			return;
+		}
+		$attempt = max( 1, (int) $attempt );
+		$delays  = self::NOTICE_RETRY_DELAYS;
+		if ( $attempt > count( $delays ) ) {
+			return;
+		}
+		self::queue_resumed_notice( (int) $cart_id, (int) $resumed_at, $attempt + 1, $delays[ $attempt - 1 ] );
+	}
+
+	/**
+	 * Whether the API answered that it could not record the notice this time (RESUME_ERROR, with HTTP 200).
+	 *
+	 * @since 3.32
+	 * @param array $response Response of wp_remote_post().
+	 * @return bool True when the notice must be sent again.
+	 */
+	private static function is_retryable_answer( $response ) {
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		return is_array( $body ) && isset( $body['error']['code'] ) && 'RESUME_ERROR' === $body['error']['code'];
+	}
+
+	/**
 	 * Send webhook to MandrakeCRM backend.
 	 *
 	 * @since 2.1.0
+	 * @since 3.32 Returns the response. An 'active' notice without resumed_at or cart_hash is never sent: for
+	 *             MandrakeCRM an 'active' upsert without resumed_at is a cart update, which would pause its reminders.
 	 * @param string $action Action: 'upsert' or 'recovered'.
 	 * @param string $cart_hash Cart hash identifier.
 	 * @param array  $extra_data Additional payload data.
+	 * @return array|WP_Error|null Response of wp_remote_post(), or null when nothing was sent (no token, or an
+	 *                             'active' notice without resumed_at or cart_hash).
 	 */
 	private static function send_webhook( $action, $cart_hash, $extra_data = array() ) {
 		$token = get_option( 'mandrakecrm_token', '' );
 
 		if ( empty( $token ) ) {
-			return;
+			return null;
+		}
+
+		if ( isset( $extra_data['status'] ) && 'active' === $extra_data['status'] && ( empty( $extra_data['resumed_at'] ) || empty( $cart_hash ) ) ) {
+			return null;
 		}
 
 		$payload = array_merge(
@@ -1347,17 +1540,23 @@ class MandrakeCRM_Abandoned_Cart {
 			$extra_data
 		);
 
+		require_once MANDRAKECRM_PLUGIN_DIR . 'includes/class-mandrakecrm-api-client.php';
+
 		$response = wp_remote_post(
 			MANDRAKECRM_API_BASE . '/store-abandoned-cart',
 			array(
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Origin'       => home_url(),
+				// 3.31: x-region, like every call to the API.
+				'headers' => MandrakeCRM_API_Client::api_headers(
+					array(
+						'Content-Type' => 'application/json',
+						'Origin'       => home_url(),
+					)
 				),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => 15,
 			)
 		);
+		return $response;
 	}
 
 	/**
@@ -1415,6 +1614,9 @@ class MandrakeCRM_Abandoned_Cart {
 			WC()->session->set( 'mandrakecrm_abandoned_cart_hash', $cart->cart_hash );
 		}
 
+		// 3.32: the cart is reported once, whole, at the end (see the end of this method), not after each product.
+		self::$restoring = true;
+
 		// Clear current cart.
 		WC()->cart->empty_cart();
 
@@ -1422,6 +1624,7 @@ class MandrakeCRM_Abandoned_Cart {
 		$cart_contents = json_decode( $cart->cart_contents, true );
 
 		if ( empty( $cart_contents ) ) {
+			self::$restoring = false;
 			return;
 		}
 
@@ -1481,6 +1684,10 @@ class MandrakeCRM_Abandoned_Cart {
 			array( 'last_activity_at' => current_time( 'mysql' ) ),
 			array( 'id' => $cart->id )
 		);
+
+		// 3.32: now the cart is whole, with its totals: record it and, for an abandoned cart, queue the «cart resumed» notice.
+		self::$restoring = false;
+		self::on_cart_updated();
 	}
 
 	/**

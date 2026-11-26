@@ -2,19 +2,19 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.30\n"
+"Project-Id-Version: MandrakeCRM – CRM & AI Marketing Automation 3.35\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mandrakecrm\n"
 "Last-Translator: MandrakeCRM Team\n"
 "Language-Team: Português Brasil\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-01T17:48:15+00:00\n"
+"POT-Creation-Date: 2026-11-26T10:06:39+00:00\n"
 "PO-Revision-Date: 2026-09-23 08:00+0000\n"
 "Language: pt_BR\n"
-"X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: mandrakecrm\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: mandrakecrm\n"
+"X-Generator: WP-CLI 2.12.0\n"
 
 #. Plugin URI of the plugin
 #: mandrakecrm.php
@@ -36,31 +36,31 @@ msgid "MandrakeCRM"
 msgstr "MandrakeCRM"
 
 #. translators: %d: number of minutes
-#: includes/class-mandrakecrm-abandoned-cart.php:165
+#: includes/class-mandrakecrm-abandoned-cart.php:207
 #, php-format
 msgid "Every %d Minutes"
 msgstr "A Cada %d Minutos"
 
-#: includes/class-mandrakecrm-agent-cart.php:390
+#: includes/class-mandrakecrm-agent-cart.php:414
 msgid "This cart link has expired. Please ask for a new one."
 msgstr "Este link de carrinho expirou. Peça um novo."
 
-#: includes/class-mandrakecrm-agent-cart.php:392
+#: includes/class-mandrakecrm-agent-cart.php:416
 msgid "This cart link is not valid. Please ask for a new one."
 msgstr "Este link de carrinho não é válido. Peça um novo."
 
 #. translators: 1: product name, 2: quantity in stock
-#: includes/class-mandrakecrm-agent-cart.php:514
+#: includes/class-mandrakecrm-agent-cart.php:539
 #, php-format
 msgid "%1$s: quantity reduced to %2$d (available stock)."
 msgstr "%1$s: quantidade reduzida para %2$d (estoque disponível)."
 
-#: includes/class-mandrakecrm-agent-cart.php:542
+#: includes/class-mandrakecrm-agent-cart.php:568
 msgid "A product"
 msgstr "Um produto"
 
 #. translators: %s: product name
-#: includes/class-mandrakecrm-agent-cart.php:546
+#: includes/class-mandrakecrm-agent-cart.php:572
 #, php-format
 msgid "%s is not available and was not added to your cart."
 msgstr "%s não está disponível e não foi adicionado ao seu carrinho."
@@ -78,7 +78,7 @@ msgid "Open MandrakeCRM Dashboard"
 msgstr "Abrir Painel do MandrakeCRM"
 
 #: includes/class-mandrakecrm-admin.php:145
-#: mandrakecrm.php:275
+#: mandrakecrm.php:508
 msgid "Settings"
 msgstr "Configurações"
 
@@ -333,21 +333,17 @@ msgstr "Configurações salvas com sucesso"
 msgid "Integration disconnected successfully"
 msgstr "Integração desconectada com sucesso"
 
-#: includes/class-mandrakecrm-checkout.php:427
-msgid "I would like to receive marketing emails about promotions, new products, and exclusive offers."
-msgstr "Gostaria de receber e-mails de marketing sobre promoções, novos produtos e ofertas exclusivas."
-
-#: includes/class-mandrakecrm-checkout.php:506
+#: includes/class-mandrakecrm-checkout.php:1658
 msgid "Marketing Consent:"
 msgstr "Consentimento de Marketing:"
 
-#: includes/class-mandrakecrm-checkout.php:510
-#: includes/class-mandrakecrm-checkout.php:543
+#: includes/class-mandrakecrm-checkout.php:1662
+#: includes/class-mandrakecrm-checkout.php:1695
 msgid "Subscribed"
 msgstr "Inscrito"
 
-#: includes/class-mandrakecrm-checkout.php:514
-#: includes/class-mandrakecrm-checkout.php:547
+#: includes/class-mandrakecrm-checkout.php:1666
+#: includes/class-mandrakecrm-checkout.php:1699
 msgid "Not Subscribed"
 msgstr "Não Inscrito"
 
@@ -360,7 +356,7 @@ msgid "Captured"
 msgstr "Capturado"
 
 #. translators: %1$s: MandrakeCRM, %2$s: WooCommerce, %3$s: Install link
-#: mandrakecrm.php:95
+#: mandrakecrm.php:104
 #, php-format
 msgid "%1$s requires %2$s to be installed and active."
 msgstr "%1$s requer que %2$s esteja instalado e ativo."
@@ -381,7 +377,7 @@ msgstr "Detectamos %d tentativas falhadas de envio de emails transacionais via A
 msgid "Please verify your internet connection and MandrakeCRM token. If the issue persists, contact support at %s"
 msgstr "Por favor verifique sua conexão com a internet e o token do MandrakeCRM. Se o problema persistir, entre em contato com o suporte em %s"
 
-#: mandrakecrm.php:101
+#: mandrakecrm.php:110
 msgid "Install WooCommerce"
 msgstr "Instalar WooCommerce"
 
@@ -398,16 +394,118 @@ msgstr "Caixa do WhatsApp no checkout"
 msgid "Show a separate checkbox at checkout so customers can agree to receive your offers on WhatsApp. WhatsApp requires this consent before marketing messages."
 msgstr "Mostra uma caixa separada no checkout para o cliente aceitar receber suas ofertas por WhatsApp. O WhatsApp exige esse consentimento antes de mensagens de marketing."
 
-#. translators: %s: store name
-#: includes/class-mandrakecrm-checkout.php:194
-#, php-format
-msgid "I agree to receive offers from %s on WhatsApp"
-msgstr "Aceito receber ofertas de %s por WhatsApp"
-
-#: includes/class-mandrakecrm-checkout.php:539
+#: includes/class-mandrakecrm-checkout.php:1691
 msgid "WhatsApp Consent:"
 msgstr "Consentimento de WhatsApp:"
 
 #: includes/class-mandrakecrm-admin.php:448
 msgid "Consents are collected on every plan. Sending WhatsApp campaigns requires the Scale plan."
 msgstr "Os consentimentos são coletados em todos os planos. Enviar campanhas por WhatsApp exige o plano Scale."
+
+#: mandrakecrm.php:201
+msgid "Remembers whether you ticked or unticked the boxes to receive marketing emails and WhatsApp messages at checkout, so they stay as you left them if the page reloads. It only holds your own clicks on those boxes, with no name, email or other identifier. It is a functional cookie: it lasts 2 hours and is removed when the cart is emptied."
+msgstr "Lembra se você marcou ou desmarcou as caixas para receber e-mails de marketing e mensagens de WhatsApp no checkout, para que fiquem como você deixou se a página recarregar. Guarda apenas os seus próprios cliques nessas caixas, sem nome, e-mail nem qualquer outro identificador. É um cookie funcional: dura 2 horas e é apagado quando o carrinho é esvaziado."
+
+#: mandrakecrm.php:205
+msgid "Keeps the campaign parameters (utm_source, utm_medium, utm_campaign, utm_term and utm_content) of the last link that brought you to the store, to know which campaign led to your order. It lasts 30 days."
+msgstr "Guarda os parâmetros de campanha (utm_source, utm_medium, utm_campaign, utm_term e utm_content) do último link que trouxe você à loja, para saber qual campanha levou ao seu pedido. Dura 30 dias."
+
+#: mandrakecrm.php:237
+msgid "Set only when you talk to the store's assistant in the chat on this site: it holds the reference of that conversation, to know whether it led to your order. It lasts as many days as the store's attribution period."
+msgstr "Só é criado quando você conversa com o assistente da loja no chat deste site: guarda a referência dessa conversa, para saber se ela levou ao seu pedido. Dura tantos dias quanto o período de atribuição da loja."
+
+#: includes/class-mandrakecrm-checkout.php:501
+msgid "I want to receive promotions, news and exclusive offers on WhatsApp."
+msgstr "Quero receber promoções, novidades e ofertas exclusivas pelo WhatsApp."
+
+#. translators: %s: store name
+#: includes/class-mandrakecrm-checkout.php:504
+#, php-format
+msgid "I want to receive promotions, news and exclusive offers from %s on WhatsApp."
+msgstr "Quero receber promoções, novidades e ofertas exclusivas de %s pelo WhatsApp."
+
+#: includes/class-mandrakecrm-checkout.php:1552
+msgid "I want to receive promotions, news and exclusive offers by email."
+msgstr "Quero receber promoções, novidades e ofertas exclusivas por e-mail."
+
+#. translators: %s: store name
+#: includes/class-mandrakecrm-checkout.php:1555
+#, php-format
+msgid "I want to receive promotions, news and exclusive offers from %s by email."
+msgstr "Quero receber promoções, novidades e ofertas exclusivas de %s por e-mail."
+
+#: mandrakecrm.php:217
+msgid "A cookie and a copy of its expiry date in local storage. They remember that you already signed up in the sign-up window or with the WhatsApp button, so you are not asked again. They last about 10 years."
+msgstr "Um cookie e uma cópia da data de validade dele no armazenamento local. Lembram que você já se cadastrou na janela de cadastro ou pelo botão de WhatsApp, para não pedir de novo. Duram cerca de 10 anos."
+
+#: mandrakecrm.php:221
+msgid "Local storage with the email, name and WhatsApp number you entered in the sign-up window or with the WhatsApp button, to fill them in for you next time. They stay in your browser until you delete this site's data."
+msgstr "Armazenamento local com o e-mail, o nome e o número de WhatsApp que você informou na janela de cadastro ou pelo botão de WhatsApp, para preenchê-los na próxima vez. Ficam no seu navegador até você apagar os dados deste site."
+
+#: mandrakecrm.php:225
+msgid "Local storage with the signed receipt MandrakeCRM returns when you sign up and the link to your preferences page: only with that receipt does MandrakeCRM tell this browser whether your email is already subscribed. They stay until you delete this site's data."
+msgstr "Armazenamento local com o comprovante assinado que o MandrakeCRM devolve quando você se cadastra e o link da sua página de preferências: só com esse comprovante o MandrakeCRM informa a este navegador se o seu e-mail já está inscrito. Ficam até você apagar os dados deste site."
+
+#: mandrakecrm.php:229
+msgid "Local storage without personal data: where you left the tab of the sign-up window and when the chat messages were shown to you, so they are not shown too often. They stay until you delete this site's data."
+msgstr "Armazenamento local sem dados pessoais: onde você deixou a aba da janela de cadastro e quando as mensagens do chat foram mostradas a você, para não aparecerem com frequência demais. Ficam até você apagar os dados deste site."
+
+#: mandrakecrm.php:233
+msgid "A cookie set only if you turn the chat sounds off or on: it remembers that choice for 1 year."
+msgstr "Um cookie criado apenas se você desligar ou ligar os sons do chat: lembra essa escolha por 1 ano."
+
+#: mandrakecrm.php:241
+msgid "Session storage, deleted when you close the tab: the state of the chat and of the WhatsApp greeting in that tab (with a short code derived from your account if you are logged in) and, only for the store's team, the chat preview link."
+msgstr "Armazenamento da sessão, apagado quando você fecha a aba: o estado do chat e da saudação de WhatsApp nessa aba (com um código curto derivado da sua conta, se você estiver logado) e, apenas para a equipe da loja, o link de pré-visualização do chat."
+
+#: mandrakecrm.php:245
+msgid "Storage of the chat window, which runs on chat.mandrakecrm.io inside this site's pages: the conversation and a code that recognizes this browser in the chat for 30 days (local storage), and how the chat looks and the message you have not sent yet (session storage, deleted with the tab). A new conversation starts after 24 hours without messages; ending the conversation in the chat deletes them."
+msgstr "Armazenamento da janela do chat, que funciona em chat.mandrakecrm.io dentro das páginas deste site: a conversa e um código que reconhece este navegador no chat por 30 dias (armazenamento local), e a aparência do chat e a mensagem que você ainda não enviou (armazenamento da sessão, apagado com a aba). Uma conversa nova começa depois de 24 horas sem mensagens; encerrar a conversa no chat apaga esses dados."
+
+#: mandrakecrm.php:261
+msgid "MandrakeCRM sends the store's marketing emails, WhatsApp messages and abandoned cart reminders. Suggested text for the cookies and the browser storage of its plugin, and for what the MandrakeCRM widget (sign-up window, WhatsApp button, chat, product offer at checkout and cashback balance) sends and keeps in the browser:"
+msgstr "O MandrakeCRM envia os e-mails de marketing, as mensagens de WhatsApp e os lembretes de carrinho abandonado da loja. Texto sugerido para os cookies e o armazenamento no navegador do plugin e para o que o widget do MandrakeCRM (janela de cadastro, botão de WhatsApp, chat, oferta de produto no checkout e saldo de cashback) envia e guarda no navegador:"
+
+#: mandrakecrm.php:262
+msgid "This store uses MandrakeCRM for its marketing emails, WhatsApp messages and abandoned cart reminders. These cookies of this site (first-party) may be set in your browser:"
+msgstr "Esta loja usa o MandrakeCRM para os seus e-mails de marketing, mensagens de WhatsApp e lembretes de carrinho abandonado. Estes cookies próprios deste site (first-party) podem ser salvos no seu navegador:"
+
+#. translators: %s: coupon code
+#: includes/class-mandrakecrm-coupon-link.php:872
+#, php-format
+msgid "Your coupon %s will be applied when you add a product to your cart."
+msgstr "Seu cupom %s será aplicado quando você adicionar um produto ao carrinho."
+
+#. translators: %s: coupon code
+#: includes/class-mandrakecrm-coupon-link.php:876
+#, php-format
+msgid "Your coupon %s will be applied at checkout as soon as you enter your email."
+msgstr "Seu cupom %s será aplicado na finalização da compra assim que você informar seu e-mail."
+
+#: mandrakecrm.php:213
+msgid "A cookie and a copy of its expiry date in local storage (some browsers delete cookies written by scripts after 7 days). They remember that you closed the sign-up window, so it does not open again by itself for the period the store chose. With the previous version of the sign-up window, the cookie lasts 3,600 days (about 10 years) and has no copy in local storage."
+msgstr "Um cookie e uma cópia da data de validade dele no armazenamento local (alguns navegadores apagam os cookies criados por scripts depois de 7 dias). Lembram que você fechou a janela de cadastro, para que ela não volte a abrir sozinha durante o período escolhido pela loja. Com a versão anterior da janela de cadastro, o cookie dura 3.600 dias (cerca de 10 anos) e não tem cópia no armazenamento local."
+
+#: mandrakecrm.php:265
+msgid "The sign-up window, the WhatsApp button and the chat on this site are a MandrakeCRM widget: their code is loaded from MandrakeCRM's servers (cdn.mandrakecrm.io, and the chat window from chat.mandrakecrm.io), and what you enter in them (name, email, WhatsApp number, chat messages) is sent to MandrakeCRM, which processes it for this store. When you write in the chat, it also sends the email you left in the sign-up window, the page you are viewing and the products in your cart and, if you are logged in to your account on this store, your customer number and the email of that account, so that you are recognized."
+msgstr "A janela de cadastro, o botão de WhatsApp e o chat deste site são um widget do MandrakeCRM: o código deles é carregado dos servidores do MandrakeCRM (cdn.mandrakecrm.io, e a janela do chat, de chat.mandrakecrm.io), e o que você informa neles (nome, e-mail, número de WhatsApp, mensagens do chat) é enviado ao MandrakeCRM, que trata esses dados para esta loja. Quando você escreve no chat, ele também envia o e-mail que você deixou na janela de cadastro, a página que você está vendo e os produtos do seu carrinho e, se você estiver conectado à sua conta nesta loja, o seu número de cliente e o e-mail dessa conta, para que você seja reconhecido."
+
+#: mandrakecrm.php:269
+msgid "Some parts load code from other providers, which receive your IP address and your browser's details when they deliver it: the chat loads Cloudflare Turnstile (challenges.cloudflare.com), a check against abuse, when you send your first message; and the previous version of the WhatsApp button loads its phone number field and its QR code from jsDelivr (cdn.jsdelivr.net) when you open it."
+msgstr "Algumas partes carregam código de outros fornecedores, que recebem o seu endereço IP e dados do seu navegador ao entregá-lo: o chat carrega o Cloudflare Turnstile (challenges.cloudflare.com), uma verificação contra abusos, quando você envia a primeira mensagem; e a versão anterior do botão de WhatsApp carrega o campo do número de telefone e o código QR do jsDelivr (cdn.jsdelivr.net) quando você o abre."
+
+#: mandrakecrm.php:270
+msgid "The widget keeps these items in your browser. They are data of this site (first-party), except those of the chat window, which are kept by chat.mandrakecrm.io, MandrakeCRM's chat domain:"
+msgstr "O widget guarda estes itens no seu navegador. São dados próprios deste site (first-party), exceto os da janela do chat, que são guardados por chat.mandrakecrm.io, o domínio do chat do MandrakeCRM:"
+
+#: mandrakecrm.php:264
+msgid "Keep the following only if the store shows on its pages the MandrakeCRM sign-up window, WhatsApp button, chat, product offer at checkout or cashback balance."
+msgstr "Mantenha o que segue apenas se a loja mostra nas suas páginas a janela de cadastro, o botão de WhatsApp, o chat, a oferta de produto no checkout ou o saldo de cashback do MandrakeCRM."
+
+#: mandrakecrm.php:266
+msgid "On the checkout, the product offer of the MandrakeCRM widget (order bump) sends MandrakeCRM the products in your cart, to choose what to offer, together with the email of the checkout form (the one you type or, if you are logged in, the one already filled in), every time the checkout updates and even if you do not use the offer; if you add the offered product, it also sends that product, its quantity and its value with that email, so the store knows whether the offer led to your order."
+msgstr "No checkout, a oferta de produto do widget do MandrakeCRM (order bump) envia ao MandrakeCRM os produtos do seu carrinho, para escolher o que oferecer, junto com o e-mail do formulário do checkout (o que você digitar ou, se estiver conectado, o que já vem preenchido), cada vez que o checkout é atualizado e mesmo que você não use a oferta; se você adicionar o produto oferecido, também envia esse produto, a quantidade e o valor, com esse e-mail, para que a loja saiba se a oferta levou ao seu pedido."
+
+#: mandrakecrm.php:267
+msgid "When you are logged in, the MandrakeCRM cashback balance in \"My account\" sends MandrakeCRM your customer number and the email of your account, signed by this store, to show your balance and movements and, if you ask for it, to turn your balance into a coupon."
+msgstr "Quando você está conectado, o saldo de cashback do MandrakeCRM em «Minha conta» envia ao MandrakeCRM o seu número de cliente e o e-mail da sua conta, assinados por esta loja, para mostrar o seu saldo e os seus movimentos e, se você pedir, transformar o seu saldo em um cupom."

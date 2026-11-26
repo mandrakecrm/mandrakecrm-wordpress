@@ -22,7 +22,8 @@
  *     derived key = HMAC-SHA256( key = store token, message = "mandrake-agent-identity-v1" ), raw 32 bytes.
  *                   In PHP: hash_hmac( 'sha256', 'mandrake-agent-identity-v1', $token, true ). The token is never
  *                   used raw, and this key differs from the signed cart links and the quote ones.
- * - Every answer carries "Cache-Control: private, no-store" and "Vary: Cookie".
+ * - Every answer carries "Cache-Control: private, no-store" and "Vary: Cookie" and, since 3.34, also tells page caches
+ *   not to store it: DONOTCACHEPAGE, WordPress' no-cache headers and LiteSpeed Cache's no-cache action (prevent_caching()).
  *
  * MandrakeCRM checks the signature, the expiry, that the nonce is used once and that the customer exists in
  * the store with that id and e-mail. The route is registered only when the store is connected.
@@ -261,10 +262,31 @@ class MandrakeCRM_Agent_Identity {
 	 * @return WP_REST_Response
 	 */
 	private static function respond( $data, $status ) {
+		self::prevent_caching( 'mandrakecrm agent identity' );
 		$response = new WP_REST_Response( $data, $status );
 		$response->header( 'Cache-Control', 'private, no-store' );
 		$response->header( 'Vary', 'Cookie' );
 		return $response;
+	}
+
+	/**
+	 * Keep an answer with a customer's identity out of every cache. Cache-Control alone is not enough: in the REST API
+	 * WordPress treats the visitor as logged out (no REST nonce), so a page cache that caches REST answers and skips only
+	 * logged-in visitors (some override Cache-Control with their own header) could store one customer's identity and hand
+	 * it to another. Also used by the cashback identity route (since 3.34).
+	 *
+	 * @since 3.34
+	 * @param string $reason Why (LiteSpeed Cache writes it in its debug log).
+	 */
+	public static function prevent_caching( $reason ) {
+		if ( function_exists( 'wc_maybe_define_constant' ) ) {
+			wc_maybe_define_constant( 'DONOTCACHEPAGE', true );
+		}
+		if ( ! headers_sent() ) {
+			nocache_headers();
+		}
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- LiteSpeed Cache's own action.
+		do_action( 'litespeed_control_set_nocache', (string) $reason );
 	}
 
 	/**

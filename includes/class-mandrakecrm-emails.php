@@ -144,6 +144,52 @@ class MandrakeCRM_Emails {
 	const ASYNC_GROUP = 'mandrakecrm';
 
 	/**
+	 * Seconds before the one retry of a background order email the API did not answer (timeout,
+	 * connection error or HTTP 5xx). By then the first call has finished on the server, so the retry
+	 * either sends it or gets "suppressed" (MandrakeCRM's per-order dedup) when the first one went out.
+	 *
+	 * @since 3.31
+	 * @var int
+	 */
+	const ASYNC_RETRY_DELAY = 60;
+
+	/**
+	 * Hook that sends the new account email in the background (arguments: customer id, whether WooCommerce generated the
+	 * password, attempt number): an Action Scheduler action of the group ASYNC_GROUP, like the order emails, or a WP-Cron
+	 * event when Action Scheduler is not there.
+	 *
+	 * @since 3.32
+	 * @var string
+	 */
+	const NEW_ACCOUNT_HOOK = 'mandrakecrm_send_new_account';
+
+	/**
+	 * Seconds before each retry of the new account email when the API does not answer (timeout, connection error or
+	 * HTTP 5xx): three retries, then it is dropped (logged).
+	 *
+	 * @since 3.32
+	 * @var int[]
+	 */
+	const NEW_ACCOUNT_RETRY_DELAYS = array( 60, 300, 900 );
+
+	/**
+	 * WP-Cron hook of the fallback of a new account email queued in Action Scheduler (arguments: action id, customer id,
+	 * whether WooCommerce generated the password, attempt number). See run_new_account_fallback().
+	 *
+	 * @since 3.32
+	 * @var string
+	 */
+	const NEW_ACCOUNT_FALLBACK_HOOK = 'mandrakecrm_new_account_fallback';
+
+	/**
+	 * Minutes (in seconds) an Action Scheduler new account email may wait past its time before WP-Cron sends it (15 minutes).
+	 *
+	 * @since 3.32
+	 * @var int
+	 */
+	const NEW_ACCOUNT_FALLBACK_AFTER = 900;
+
+	/**
 	 * Order email types that may be sent in the background.
 	 *
 	 * @since 3.24
@@ -173,7 +219,10 @@ class MandrakeCRM_Emails {
 
 		// v3.24: background sender. Registered before the early return so emails already
 		// queued are still handled (run_async_order_email() re-checks the setting).
-		add_action( self::ASYNC_HOOK, array( __CLASS__, 'run_async_order_email' ), 10, 3 );
+		add_action( self::ASYNC_HOOK, array( __CLASS__, 'run_async_order_email' ), 10, 4 );
+		// 3.32: new account emails queued in Action Scheduler or WP-Cron (run_queued_new_account() re-checks the setting).
+		add_action( self::NEW_ACCOUNT_HOOK, array( __CLASS__, 'run_queued_new_account' ), 10, 3 );
+		add_action( self::NEW_ACCOUNT_FALLBACK_HOOK, array( __CLASS__, 'run_new_account_fallback' ), 10, 4 );
 
 		// Do not load if feature disabled OR no valid token
 		if ( ! $enabled || empty( $token ) ) {
@@ -519,10 +568,178 @@ class MandrakeCRM_Emails {
 	 * @param string $password_generated Generated password.
 	 */
 	public static function send_new_account( $customer_id, $new_customer_data, $password_generated = '' ) {
+		if ( ! get_user_by( 'id', $customer_id ) ) {
+			return;
+		}
+
+		// 3.32: sent in the background by Action Scheduler (WP-Cron when it is not there), never inside the visitor's request
+		// (the checkout that creates the account does not wait for the API). Sent right away, as before, only when it cannot
+		// be queued, so it is never lost.
+		if ( self::queue_new_account( $customer_id, $password_generated, 1, 0 ) ) {
+			return;
+		}
+
+		self::deliver_new_account( $customer_id, $password_generated );
+	}
+
+	/**
+	 * Queue the new account email: in Action Scheduler, as queue_order_email() does (it runs without WP-Cron too: a system
+	 * cron, WP-CLI or the store's admin), or in WP-Cron when Action Scheduler is not there or does not take it.
+	 *
+	 * Only the customer id and whether WooCommerce generated the password are stored: the email (and the link to set
+	 * the password) is built when it is sent. A password passed in the clear (not a boolean) is never stored, so that
+	 * email goes right away.
+	 *
+	 * @since 3.32
+	 * @since 3.32 Action Scheduler first.
+	 * @param int   $customer_id        Customer ID.
+	 * @param mixed $password_generated Whether WooCommerce generated the password (bool since WooCommerce 3.x).
+	 * @param int   $attempt            Attempt number (1 the first time).
+	 * @param int   $delay              Seconds from now.
+	 * @return bool Whether it is queued.
+	 */
+	private static function queue_new_account( $customer_id, $password_generated, $attempt, $delay ) {
+		if ( ! is_bool( $password_generated ) && ! empty( $password_generated ) ) {
+			return false;
+		}
+		$args = array( (int) $customer_id, (bool) $password_generated, (int) $attempt );
+
+		if ( self::use_action_scheduler() ) {
+			if ( as_has_scheduled_action( self::NEW_ACCOUNT_HOOK, $args, self::ASYNC_GROUP ) ) {
+				return true;
+			}
+			try {
+				$action_id = ( (int) $delay > 0 )
+					? as_schedule_single_action( time() + (int) $delay, self::NEW_ACCOUNT_HOOK, $args, self::ASYNC_GROUP )
+					: as_enqueue_async_action( self::NEW_ACCOUNT_HOOK, $args, self::ASYNC_GROUP );
+			} catch ( Throwable $e ) {
+				$action_id = 0;
+			}
+			if ( ! empty( $action_id ) ) {
+				// A bounded fallback for an action that Action Scheduler accepts and never runs (run_new_account_fallback()).
+				wp_schedule_single_event(
+					time() + (int) $delay + self::NEW_ACCOUNT_FALLBACK_AFTER,
+					self::NEW_ACCOUNT_FALLBACK_HOOK,
+					array( (int) $action_id, (int) $customer_id, (bool) $password_generated, (int) $attempt )
+				);
+				return true;
+			}
+		}
+
+		if ( wp_next_scheduled( self::NEW_ACCOUNT_HOOK, $args ) ) {
+			return true;
+		}
+
+		return true === wp_schedule_single_event( time() + (int) $delay, self::NEW_ACCOUNT_HOOK, $args );
+	}
+
+	/**
+	 * Whether the background jobs of this class go to Action Scheduler (WooCommerce bundles it).
+	 *
+	 * @since 3.32
+	 * @return bool
+	 */
+	private static function use_action_scheduler() {
+		if ( ! function_exists( 'as_enqueue_async_action' ) || ! function_exists( 'as_schedule_single_action' ) || ! function_exists( 'as_has_scheduled_action' ) ) {
+			return false;
+		}
+
+		/**
+		 * Filters whether MandrakeCRM queues its background jobs (new account email, resumed cart notice) in Action
+		 * Scheduler. False: WP-Cron.
+		 *
+		 * @since 3.32
+		 * @param bool $use Default true.
+		 */
+		return (bool) apply_filters( 'mandrakecrm_use_action_scheduler', true );
+	}
+
+	/**
+	 * Action Scheduler (or WP-Cron): send a queued new account email; when the API does not answer (timeout, connection
+	 * error or HTTP 5xx), retry after NEW_ACCOUNT_RETRY_DELAYS and drop it (logged) after the last one.
+	 *
+	 * @since 3.32
+	 * @param int  $customer_id        Customer ID.
+	 * @param bool $password_generated Whether WooCommerce generated the password.
+	 * @param int  $attempt            Attempt number.
+	 */
+	public static function run_queued_new_account( $customer_id, $password_generated = false, $attempt = 1 ) {
+		if ( get_option( 'mandrakecrm_transactional_emails', '0' ) !== '1' ) {
+			return;
+		}
+
+		$result = self::deliver_new_account( (int) $customer_id, (bool) $password_generated );
+		if ( null === $result || ! self::is_no_answer( $result ) ) {
+			return;
+		}
+
+		$attempt = max( 1, (int) $attempt );
+		$delays  = self::NEW_ACCOUNT_RETRY_DELAYS;
+		if ( $attempt <= count( $delays ) && self::queue_new_account( (int) $customer_id, (bool) $password_generated, $attempt + 1, $delays[ $attempt - 1 ] ) ) {
+			return;
+		}
+
+		self::log( 'warning', sprintf( 'new_account for customer %d: no answer from MandrakeCRM (%s) after %d attempts; not sent.', (int) $customer_id, $result['code'], $attempt ) );
+	}
+
+	/**
+	 * WP-Cron fallback of a new account email queued in Action Scheduler: when the action is still waiting
+	 * NEW_ACCOUNT_FALLBACK_AFTER past its time and no runner has claimed it (a stuck queue), WP-Cron takes it and sends it,
+	 * once. Taking it is one atomic change in Action Scheduler's table (pending, unclaimed, due long ago → canceled), so the
+	 * email never goes twice: Action Scheduler does not run a canceled action, and an action it already ran, is running or
+	 * claimed is left to it. Any other case (another store, WooCommerce inactive) leaves the action as it is.
+	 *
+	 * @since 3.32
+	 * @param int  $action_id          Action Scheduler action id.
+	 * @param int  $customer_id        Customer ID.
+	 * @param bool $password_generated Whether WooCommerce generated the password.
+	 * @param int  $attempt            Attempt number.
+	 */
+	public static function run_new_account_fallback( $action_id, $customer_id = 0, $password_generated = false, $attempt = 1 ) {
+		if ( (int) $action_id <= 0 || (int) $customer_id <= 0 || ! class_exists( 'ActionScheduler' ) ) {
+			return;
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . 'actionscheduler_actions';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Action Scheduler's own table (prefix + fixed name), one atomic change of one row; values through prepare().
+		$taken = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE $table SET status = %s WHERE action_id = %d AND hook = %s AND status = %s AND claim_id = 0 AND scheduled_date_gmt <= %s",
+				'canceled',
+				(int) $action_id,
+				self::NEW_ACCOUNT_HOOK,
+				'pending',
+				gmdate( 'Y-m-d H:i:s', time() - self::NEW_ACCOUNT_FALLBACK_AFTER )
+			)
+		);
+		// phpcs:enable
+		if ( 1 !== (int) $taken ) {
+			return;
+		}
+		if ( method_exists( 'ActionScheduler', 'logger' ) ) {
+			try {
+				ActionScheduler::logger()->log( (int) $action_id, 'Not run in time: sent by the MandrakeCRM WP-Cron fallback.' );
+			} catch ( Throwable $e ) {
+				unset( $e ); // The log line is only informative.
+			}
+		}
+		self::log( 'warning', sprintf( 'new_account for customer %d: Action Scheduler did not run it in time; sent by WP-Cron.', (int) $customer_id ) );
+		self::run_queued_new_account( (int) $customer_id, (bool) $password_generated, (int) $attempt );
+	}
+
+	/**
+	 * Build the new account email and send it to the MandrakeCRM API.
+	 *
+	 * @since 3.32 (was the body of send_new_account() since 2.0.0)
+	 * @param int   $customer_id        Customer ID.
+	 * @param mixed $password_generated Generated password, or whether WooCommerce generated it.
+	 * @return array|null Result of MandrakeCRM_API_Client::send_email_result(), or null when the user does not exist.
+	 */
+	private static function deliver_new_account( $customer_id, $password_generated = '' ) {
 		$user = get_user_by( 'id', $customer_id );
 
 		if ( ! $user ) {
-			return;
+			return null;
 		}
 
 		// Build additional data array with user info (mirroring WC_Email_Customer_New_Account)
@@ -555,7 +772,7 @@ class MandrakeCRM_Emails {
 			$additional_data['set_password_url'] = $set_password_url;
 		}
 
-		MandrakeCRM_API_Client::send_email(
+		return MandrakeCRM_API_Client::send_email_result(
 			'new_account',
 			$user->user_email,
 			$user->display_name ? $user->display_name : $user->user_login,
@@ -786,12 +1003,21 @@ class MandrakeCRM_Emails {
 	/**
 	 * Action Scheduler callback: send a queued order email.
 	 *
+	 * 3.31: when the API does not answer on the first try (timeout, connection error or HTTP 5xx), the
+	 * email is tried once more ASYNC_RETRY_DELAY seconds later in a new job, before WooCommerce's copy goes
+	 * out: the first call usually reached MandrakeCRM anyway and the retry comes back "suppressed", so the
+	 * customer gets one email and no failure is counted. If the retry fails too: the failure is counted
+	 * and WooCommerce's email goes out, as before. A separate job (not a second call in this one) keeps
+	 * each run under PHP's and the proxy's time limits.
+	 *
 	 * @since 3.24
+	 * @since 3.31 $attempt and the one retry.
 	 * @param int    $order_id   Order ID.
 	 * @param string $email_type Email type.
 	 * @param string $status     Order status when the email was triggered.
+	 * @param int    $attempt    0 = first try, 1 = the retry.
 	 */
-	public static function run_async_order_email( $order_id, $email_type = '', $status = '' ) {
+	public static function run_async_order_email( $order_id, $email_type = '', $status = '', $attempt = 0 ) {
 		if ( get_option( 'mandrakecrm_transactional_emails', '0' ) !== '1' ) {
 			return;
 		}
@@ -800,9 +1026,74 @@ class MandrakeCRM_Emails {
 		}
 
 		$result = self::deliver_order_email( (int) $order_id, (string) $email_type, (string) $status );
-		if ( null !== $result ) {
-			self::after_api_send( $result, (string) $email_type, (int) $order_id );
+		if ( null === $result ) {
+			return;
 		}
+
+		if ( 0 === (int) $attempt && self::is_no_answer( $result ) && self::schedule_retry( (int) $order_id, (string) $email_type, (string) $status, $result ) ) {
+			return;
+		}
+
+		self::after_api_send( $result, (string) $email_type, (int) $order_id );
+	}
+
+	/**
+	 * Whether the API did not answer: the request failed (timeout, connection) or the server failed (5xx).
+	 * The store's own choices (CONFIG_DISABLED…), 4xx and malformed answers are not retried.
+	 *
+	 * @since 3.31
+	 * @param array $result Result of MandrakeCRM_API_Client::send_email_result().
+	 * @return bool
+	 */
+	private static function is_no_answer( array $result ) {
+		if ( ! empty( $result['success'] ) ) {
+			return false;
+		}
+
+		return 'HTTP_ERROR' === $result['code'] || (int) $result['http_code'] >= 500;
+	}
+
+	/**
+	 * Schedule the one retry of a background order email.
+	 *
+	 * @since 3.31
+	 * @param int    $order_id   Order ID.
+	 * @param string $email_type Email type.
+	 * @param string $status     Order status when the email was triggered.
+	 * @param array  $result     Result of the first try.
+	 * @return bool Whether the retry was scheduled (false = handle the failure now, as before 3.31).
+	 */
+	private static function schedule_retry( $order_id, $email_type, $status, array $result ) {
+		if ( ! function_exists( 'as_schedule_single_action' ) ) {
+			return false;
+		}
+
+		try {
+			$action_id = as_schedule_single_action(
+				time() + self::ASYNC_RETRY_DELAY,
+				self::ASYNC_HOOK,
+				array(
+					'order_id'   => (int) $order_id,
+					'email_type' => (string) $email_type,
+					'status'     => (string) $status,
+					'attempt'    => 1,
+				),
+				self::ASYNC_GROUP
+			);
+		} catch ( Throwable $e ) {
+			$action_id = 0;
+		}
+
+		if ( empty( $action_id ) ) {
+			return false;
+		}
+
+		self::log(
+			'info',
+			sprintf( '%s for order %d: no answer from MandrakeCRM (%s); retrying once in %d s.', $email_type, $order_id, $result['code'], self::ASYNC_RETRY_DELAY )
+		);
+
+		return true;
 	}
 
 	/**

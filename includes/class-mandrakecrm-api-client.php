@@ -33,6 +33,28 @@ class MandrakeCRM_API_Client {
 	}
 
 	/**
+	 * Headers for a call to the MandrakeCRM API: the given ones plus x-region.
+	 *
+	 * The API runs in the region closest to the caller unless x-region names one. Its database is in
+	 * sa-east-1, so a store whose server is far from it (e.g. in Virginia) paid every database query of
+	 * the call across the continent: the transactional email took ~5 s and sometimes hit the plugin's
+	 * 15 s timeout. MANDRAKECRM_API_REGION (default sa-east-1, can be defined in wp-config.php) sets the
+	 * region; empty sends no header. Only lowercase letters, digits and hyphens are kept.
+	 *
+	 * @since 3.31
+	 * @param array $headers Request headers.
+	 * @return array Headers with x-region.
+	 */
+	public static function api_headers( array $headers ) {
+		$region = defined( 'MANDRAKECRM_API_REGION' ) ? preg_replace( '/[^a-z0-9-]/', '', strtolower( (string) MANDRAKECRM_API_REGION ) ) : '';
+		if ( '' !== $region ) {
+			$headers['x-region'] = $region;
+		}
+
+		return $headers;
+	}
+
+	/**
 	 * Verify if the token is valid.
 	 *
 	 * @since 2.0.0
@@ -55,9 +77,11 @@ class MandrakeCRM_API_Client {
 			MANDRAKECRM_API_BASE . '/store-plugin-status?token=' . urlencode( $token ),
 			array(
 				'timeout' => 15,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Origin'       => home_url(),
+				'headers' => self::api_headers(
+					array(
+						'Content-Type' => 'application/json',
+						'Origin'       => home_url(),
+					)
 				),
 			)
 		);
@@ -131,6 +155,8 @@ class MandrakeCRM_API_Client {
 				'agent_identity'       => true, // 3.30: signed identity of the logged-in customer (GET mandrakecrm/v1/agent/identity).
 				'agent_cart_add'       => true, // 3.30: signed cart links can add to the cart ("m":"add") instead of replacing it.
 				'merlin_site'          => true, // 3.30: chat reference cookie saved on the order; widget.js cached per plugin version.
+				'store_settings_push'  => true, // 3.32: signed settings notice (POST mandrakecrm/v1/settings) and checkout consent proof metas.
+				'cashback_identity'    => true, // 3.34: signed identity of the logged-in customer for the cashback balance (GET mandrakecrm/v1/cashback/identity).
 			),
 			'account_urls'   => array(
 				'myaccount' => $myaccount_url,
@@ -142,9 +168,11 @@ class MandrakeCRM_API_Client {
 			MANDRAKECRM_API_BASE . '/store-plugin-status',
 			array(
 				'timeout' => 15,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Origin'       => home_url(),
+				'headers' => self::api_headers(
+					array(
+						'Content-Type' => 'application/json',
+						'Origin'       => home_url(),
+					)
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
@@ -196,9 +224,11 @@ class MandrakeCRM_API_Client {
 			MANDRAKECRM_API_BASE . '/store-plugin-status',
 			array(
 				'timeout' => 5,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Origin'       => home_url(),
+				'headers' => self::api_headers(
+					array(
+						'Content-Type' => 'application/json',
+						'Origin'       => home_url(),
+					)
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
@@ -246,9 +276,11 @@ class MandrakeCRM_API_Client {
 			MANDRAKECRM_API_BASE . '/store-plugin-status',
 			array(
 				'timeout' => 5,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Origin'       => home_url(),
+				'headers' => self::api_headers(
+					array(
+						'Content-Type' => 'application/json',
+						'Origin'       => home_url(),
+					)
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
@@ -339,10 +371,12 @@ class MandrakeCRM_API_Client {
 			MANDRAKECRM_API_BASE . '/store-send-transactional',
 			array(
 				'timeout' => 15,
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ampmZWNua2lhYW5pd3RseWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyODkxMDYsImV4cCI6MjA2Nzg2NTEwNn0.C8fNmSEvZ1RTtfeVnXwPZLQzE9NRNMa5dbdo0mtfFso',
-					'Origin'        => home_url(),
+				'headers' => self::api_headers(
+					array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ampmZWNua2lhYW5pd3RseWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyODkxMDYsImV4cCI6MjA2Nzg2NTEwNn0.C8fNmSEvZ1RTtfeVnXwPZLQzE9NRNMa5dbdo0mtfFso',
+						'Origin'        => home_url(),
+					)
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
